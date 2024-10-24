@@ -1,0 +1,691 @@
+package parser
+
+import (
+	"fmt"
+
+	"github.com/sparkle-tech/obfuscator/ast"
+	"github.com/sparkle-tech/obfuscator/diagnostics"
+	"github.com/sparkle-tech/obfuscator/lexer"
+	"github.com/sparkle-tech/obfuscator/token"
+)
+
+const (
+	_ int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // call(X)
+	INDEX
+)
+
+var precedences = map[token.ItemType]int{
+	token.ItemAssign:            EQUALS,
+	token.ItemDoubleEqual:       EQUALS,
+	token.ItemNotEqual:          EQUALS,
+	token.ItemLessThan:          LESSGREATER,
+	token.ItemGreaterThan:       LESSGREATER,
+	token.ItemPlus:              SUM,
+	token.ItemMinus:             SUM,
+	token.ItemDivide:            PRODUCT,
+	token.ItemMultiply:          PRODUCT,
+	token.ItemPipe:              PRODUCT,
+	token.ItemInfix:             PRODUCT,
+	token.ItemLeftParen:         CALL,
+	token.ItemDollar:            SUM,
+	token.ItemNamespace:         EQUALS,
+	token.ItemNamespaceInternal: EQUALS,
+	token.ItemLeftSquare:        EQUALS,
+	token.ItemDoubleLeftSquare:  EQUALS,
+}
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
+type Parser struct {
+	l      *lexer.Lexer
+	errors diagnostics.Diagnostics
+
+	pos int
+
+	curToken  token.Item
+	peekToken token.Item
+
+	prefixParseFns map[token.ItemType]prefixParseFn
+	infixParseFns  map[token.ItemType]infixParseFn
+}
+
+func New(l *lexer.Lexer) *Parser {
+	p := &Parser{
+		l:      l,
+		errors: diagnostics.Diagnostics{},
+	}
+
+	p.prefixParseFns = make(map[token.ItemType]prefixParseFn)
+	p.registerPrefix(token.ItemIdent, p.parseIdentifier)
+	p.registerPrefix(token.ItemComma, p.parseComma)
+	p.registerPrefix(token.ItemAttribute, p.parseAttribute)
+	p.registerPrefix(token.ItemInteger, p.parseIntegerLiteral)
+	p.registerPrefix(token.ItemFloat, p.parseFloatLiteral)
+	p.registerPrefix(token.ItemBang, p.parsePrefixExpression)
+	p.registerPrefix(token.ItemMinus, p.parsePrefixExpression)
+	p.registerPrefix(token.ItemBool, p.parseBoolean)
+	p.registerPrefix(token.ItemIf, p.parseIfExpression)
+	p.registerPrefix(token.ItemFunction, p.parseFunctionLiteral)
+	p.registerPrefix(token.ItemBackslash, p.parseFunctionLiteral)
+	p.registerPrefix(token.ItemDoubleQuote, p.parseStringLiteral)
+	p.registerPrefix(token.ItemSingleQuote, p.parseStringLiteral)
+	p.registerPrefix(token.ItemNA, p.parseNA)
+	p.registerPrefix(token.ItemNan, p.parseNan)
+	p.registerPrefix(token.ItemNAComplex, p.parseNaComplex)
+	p.registerPrefix(token.ItemNAReal, p.parseNaReal)
+	p.registerPrefix(token.ItemNAInteger, p.parseNaInteger)
+	p.registerPrefix(token.ItemInf, p.parseInf)
+	p.registerPrefix(token.ItemNULL, p.parseNull)
+	p.registerPrefix(token.ItemThreeDot, p.parseElipsis)
+	p.registerPrefix(token.ItemString, p.parseNaString)
+	p.registerPrefix(token.ItemFor, p.parseFor)
+	p.registerPrefix(token.ItemWhile, p.parseWhile)
+	p.registerPrefix(token.ItemRightSquare, p.parseSquare)
+	p.registerPrefix(token.ItemDoubleRightSquare, p.parseSquare)
+
+	p.infixParseFns = make(map[token.ItemType]infixParseFn)
+	p.registerInfix(token.ItemPlus, p.parseInfixExpression)
+	p.registerInfix(token.ItemMinus, p.parseInfixExpression)
+	p.registerInfix(token.ItemDivide, p.parseInfixExpression)
+	p.registerInfix(token.ItemMultiply, p.parseInfixExpression)
+	p.registerInfix(token.ItemAssign, p.parseInfixExpression)
+	p.registerInfix(token.ItemDoubleEqual, p.parseInfixExpression)
+	p.registerInfix(token.ItemNotEqual, p.parseInfixExpression)
+	p.registerInfix(token.ItemLessThan, p.parseInfixExpression)
+	p.registerInfix(token.ItemGreaterThan, p.parseInfixExpression)
+	p.registerInfix(token.ItemPipe, p.parseInfixExpression)
+	p.registerInfix(token.ItemComma, p.parseInfixExpression)
+	p.registerInfix(token.ItemDollar, p.parseInfixExpression)
+	p.registerInfix(token.ItemColon, p.parseInfixExpression)
+	p.registerInfix(token.ItemNamespace, p.parseInfixExpression)
+	p.registerInfix(token.ItemNamespaceInternal, p.parseInfixExpression)
+	p.registerInfix(token.ItemLeftSquare, p.parseInfixExpression)
+	p.registerInfix(token.ItemDoubleLeftSquare, p.parseInfixExpression)
+
+	p.registerInfix(token.ItemLeftParen, p.parseCallExpression)
+
+	p.nextToken()
+	p.nextToken()
+
+	return p
+}
+
+func (p *Parser) nextToken() {
+	p.curToken = p.peekToken
+	if p.pos >= len(p.l.Items) {
+		return
+	}
+	p.peekToken = p.l.Items[p.pos]
+	p.pos++
+}
+
+func (p *Parser) previousToken(n int) {
+	for i := 0; i < n; i++ {
+		p.pos--
+		p.curToken = p.l.Items[p.pos-2]
+		p.peekToken = p.l.Items[p.pos-1]
+	}
+}
+
+func (p *Parser) print() {
+	fmt.Println("++++++++++++++++++++ Current ++++++++++++++++++++")
+	fmt.Printf("line: %v - character: %v | ", p.curToken.Line+1, p.curToken.Char+1)
+	p.curToken.Print()
+	fmt.Println("++++++++++++++++++++ Peek")
+	fmt.Printf("line: %v - character: %v | ", p.peekToken.Line+1, p.peekToken.Char+1)
+	p.peekToken.Print()
+}
+
+func (p *Parser) curTokenIs(t token.ItemType) bool {
+	return p.curToken.Class == t
+}
+
+func (p *Parser) peekTokenIs(t token.ItemType) bool {
+	return p.peekToken.Class == t
+}
+
+func (p *Parser) expectPeek(t token.ItemType) bool {
+	if p.peekTokenIs(t) {
+		p.nextToken()
+		return true
+	} else {
+		p.peekError(t)
+		return false
+	}
+}
+
+func (p *Parser) expectCurrent(t token.ItemType) bool {
+	if p.curTokenIs(t) {
+		return true
+	} else {
+		p.peekError(t)
+		return false
+	}
+}
+
+func (p *Parser) HasError() bool {
+	return len(p.errors) > 0
+}
+
+func (p *Parser) Errors() diagnostics.Diagnostics {
+	return p.errors
+}
+
+func (p *Parser) peekError(t token.ItemType) {
+	// we already got an error on the lexer: use it
+	if p.peekToken.Class == token.ItemError {
+		return
+	}
+
+	msg := fmt.Sprintf(
+		"expected next token to be `%v`, got `%v` instead",
+		t,
+		p.peekToken.Class,
+	)
+
+	p.errors = append(
+		p.errors,
+		diagnostics.NewError(p.curToken, msg),
+	)
+}
+
+func (p *Parser) noPrefixParseFnError(t token.ItemType) {
+	msg := fmt.Sprintf(
+		"no prefix parse function for `%v` found",
+		t,
+	)
+	p.errors = append(
+		p.errors,
+		diagnostics.NewError(p.curToken, msg),
+	)
+}
+
+func (p *Parser) Run() *ast.Program {
+	program := &ast.Program{}
+	program.Statements = []ast.Statement{}
+
+	for !p.curTokenIs(token.ItemEOF) && !p.curTokenIs(token.ItemError) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			program.Statements = append(program.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return program
+}
+
+func (p *Parser) parseStatement() ast.Statement {
+	switch p.curToken.Class {
+	case token.ItemComment:
+		return p.parseCommentStatement()
+	default:
+		return p.parseExpressionStatement()
+	}
+}
+
+func (p *Parser) parseFor() ast.Expression {
+	lit := &ast.For{
+		Token: p.curToken,
+	}
+
+	if !p.expectPeek(token.ItemLeftParen) {
+		return nil
+	}
+
+	if !p.expectPeek(token.ItemIdent) {
+		return nil
+	}
+
+	lit.Name = p.curToken.Value
+
+	if !p.expectPeek(token.ItemIn) {
+		return nil
+	}
+
+	p.nextToken()
+
+	lit.Vector = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.ItemRightParen) {
+		p.nextToken()
+	}
+
+	if !p.curTokenIs(token.ItemRightParen) {
+		return nil
+	}
+
+	if !p.expectPeek(token.ItemLeftCurly) {
+		return nil
+	}
+
+	lit.Value = p.parseBlockStatement()
+
+	p.nextToken()
+
+	return lit
+}
+
+func (p *Parser) parseWhile() ast.Expression {
+	lit := &ast.While{
+		Token: p.curToken,
+	}
+
+	if !p.expectPeek(token.ItemLeftParen) {
+		return nil
+	}
+
+	p.nextToken()
+
+	lit.Statement = p.parseStatement()
+
+	if p.peekTokenIs(token.ItemRightParen) {
+		p.nextToken()
+	}
+
+	if p.peekTokenIs(token.ItemLeftCurly) {
+		p.nextToken()
+	}
+
+	lit.Value = p.parseBlockStatement()
+
+	if p.peekTokenIs(token.ItemRightCurly) {
+		p.nextToken()
+	}
+
+	return lit
+}
+
+func (p *Parser) parseComma() ast.Expression {
+	return &ast.Comma{Token: p.curToken}
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Value}
+}
+
+func (p *Parser) parseAttribute() ast.Expression {
+	return &ast.Attribute{Token: p.curToken, Value: p.curToken.Value}
+}
+
+func (p *Parser) parseNull() ast.Expression {
+	return &ast.Null{
+		Token: p.curToken,
+		Value: "NULL",
+	}
+}
+
+func (p *Parser) parseElipsis() ast.Expression {
+	return &ast.Keyword{Token: p.curToken, Value: "..."}
+}
+
+func (p *Parser) parseNA() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "NA",
+	}
+}
+
+func (p *Parser) parseNan() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "NaN",
+	}
+}
+
+func (p *Parser) parseNaString() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "NA_character_",
+	}
+}
+
+func (p *Parser) parseNaReal() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "NA_real_",
+	}
+}
+
+func (p *Parser) parseNaComplex() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "NA_complex_",
+	}
+}
+
+func (p *Parser) parseNaInteger() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "NA_integer_",
+	}
+}
+
+func (p *Parser) parseInf() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "Inf",
+	}
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	return stmt
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.curToken.Class]
+	if prefix == nil {
+		p.noPrefixParseFnError(p.curToken.Class)
+		return nil
+	}
+
+	leftExp := prefix()
+
+	for !p.peekTokenIs(token.ItemEOF) &&
+		precedence < p.peekPrecedence() {
+		infix := p.infixParseFns[p.peekToken.Class]
+		if infix == nil {
+			return leftExp
+		}
+
+		p.nextToken()
+
+		leftExp = infix(leftExp)
+	}
+
+	return leftExp
+}
+
+func (p *Parser) peekPrecedence() int {
+	if p, ok := precedences[p.peekToken.Class]; ok {
+		return p
+	}
+
+	return LOWEST
+}
+
+func (p *Parser) curPrecedence() int {
+	if p, ok := precedences[p.curToken.Class]; ok {
+		return p
+	}
+
+	return LOWEST
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	return &ast.IntegerLiteral{
+		Token: p.curToken,
+		Value: p.curToken.Value,
+	}
+}
+
+func (p *Parser) parseFloatLiteral() ast.Expression {
+	return &ast.FloatLiteral{
+		Token: p.curToken,
+		Value: p.curToken.Value,
+	}
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	return &ast.Boolean{
+		Token: p.curToken,
+		Value: p.curToken.Value == "true" || p.curToken.Value == "TRUE",
+	}
+}
+
+func (p *Parser) parseCommentStatement() ast.Statement {
+	return &ast.CommentStatement{Token: p.curToken, Value: p.curToken.Value}
+}
+
+func (p *Parser) parseStringLiteral() ast.Expression {
+	str := &ast.StringLiteral{
+		Token: p.curToken,
+	}
+
+	// it's an empty string ""
+	if p.peekTokenIs(p.curToken.Class) {
+		p.nextToken()
+		return str
+	}
+
+	p.expectPeek(token.ItemString)
+
+	str.Str = p.curToken.Value
+
+	p.nextToken()
+
+	return str
+}
+
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	expression := &ast.PrefixExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Value,
+	}
+
+	p.nextToken()
+
+	expression.Right = p.parseExpression(PREFIX)
+
+	return expression
+}
+
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	operator := p.curToken.Value
+
+	expression := &ast.InfixExpression{
+		Token:    p.curToken,
+		Operator: operator,
+		Left:     left,
+	}
+
+	precedence := p.curPrecedence()
+	p.nextToken()
+	expression.Right = p.parseExpression(precedence)
+
+	return expression
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	// skip paren left (
+	p.nextToken()
+
+	exp := p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.ItemRightParen) {
+		return nil
+	}
+
+	return exp
+}
+
+func (p *Parser) parseIfExpression() ast.Expression {
+	expression := &ast.IfExpression{Token: p.curToken}
+
+	if !p.expectPeek(token.ItemLeftParen) {
+		return nil
+	}
+
+	p.nextToken()
+
+	expression.Condition = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.ItemRightParen) {
+		p.nextToken()
+	}
+
+	if !p.expectPeek(token.ItemLeftCurly) {
+		return nil
+	}
+
+	expression.Consequence = p.parseBlockStatement()
+
+	if p.peekTokenIs(token.ItemElse) {
+		p.nextToken()
+
+		if !p.expectPeek(token.ItemLeftCurly) {
+			return nil
+		}
+
+		expression.Alternative = p.parseBlockStatement()
+	}
+
+	return expression
+}
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{Token: p.curToken}
+	block.Statements = []ast.Statement{}
+
+	p.nextToken()
+
+	for !p.curTokenIs(token.ItemRightCurly) && !p.curTokenIs(token.ItemEOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			block.Statements = append(block.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return block
+}
+
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	lit := &ast.FunctionLiteral{Token: p.curToken}
+
+	if !p.expectPeek(token.ItemLeftParen) {
+		return nil
+	}
+
+	lit.Parameters = p.parseFunctionParameters()
+
+	if !p.expectPeek(token.ItemLeftCurly) {
+		return nil
+	}
+
+	p.nextToken()
+
+	lit.Body = p.parseBlockStatement()
+
+	return lit
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Parameter {
+	parameters := []*ast.Parameter{}
+
+	// function has no parameters
+	if p.peekTokenIs(token.ItemRightParen) {
+		p.nextToken()
+		return parameters
+	}
+
+	for p.peekTokenIs(token.ItemIdent) || p.peekTokenIs(token.ItemThreeDot) {
+		p.nextToken()
+
+		if p.curTokenIs(token.ItemComma) {
+			p.nextToken()
+		}
+
+		parameter := &ast.Parameter{Token: p.curToken, Name: p.curToken.Value}
+
+		// if we have an assign we parse a statement, the function default
+		if p.peekTokenIs(token.ItemAssign) {
+			p.nextToken()
+			p.nextToken()
+			parameter.Operator = "="
+			parameter.Default = p.parseExpressionStatement()
+		}
+
+		parameters = append(parameters, parameter)
+
+		if p.peekTokenIs(token.ItemComma) {
+			p.nextToken()
+		}
+	}
+
+	if !p.expectPeek(token.ItemRightParen) {
+		return nil
+	}
+
+	return parameters
+}
+
+func (p *Parser) parseSquare() ast.Expression {
+	return &ast.Square{
+		Token: p.curToken,
+	}
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	exp := &ast.CallExpression{Token: p.curToken, Name: function.Item().Value}
+
+	exp.Arguments = p.parseCallArguments()
+
+	// skip last token
+	p.nextToken()
+
+	if p.peekTokenIs(token.ItemRightParen) {
+		p.nextToken()
+	}
+
+	// if it's a nested call we may have a trailing
+	if p.peekTokenIs(token.ItemComma) {
+		p.nextToken()
+	}
+
+	return exp
+}
+
+func (p *Parser) parseCallArguments() []ast.Argument {
+	args := []ast.Argument{}
+
+	if p.peekTokenIs(token.ItemRightParen) {
+		return args
+	}
+
+	for !p.peekTokenIs(token.ItemRightParen) && !p.peekTokenIs(token.ItemComma) {
+		p.nextToken()
+
+		var arg ast.Argument
+		if p.peekTokenIs(token.ItemAssign) {
+			arg.Name = p.curToken.Value
+		}
+		arg.Token = p.curToken
+
+		arg.Value = p.parseExpression(LOWEST)
+
+		args = append(args, arg)
+
+		if p.curTokenIs(token.ItemRightParen) {
+			return args
+		}
+
+		if p.peekTokenIs(token.ItemComma) {
+			p.nextToken()
+		}
+	}
+
+	return args
+}
+
+func (p *Parser) registerPrefix(tokenType token.ItemType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType token.ItemType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
+}
