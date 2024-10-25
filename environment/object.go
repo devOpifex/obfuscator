@@ -1,0 +1,21 @@
+package environment
+
+import (
+	"github.com/sparkle-tech/obfuscator/ast"
+	"github.com/sparkle-tech/obfuscator/token"
+)
+
+// this should be an interface but I haven't got the time right now
+type Function struct {
+	Token      token.Item
+	Package    string
+	Value      *ast.FunctionLiteral
+	Name       string
+	Obfuscated string
+}
+
+type Variable struct {
+	Token      token.Item
+	Name       string
+	Obfuscated string
+}

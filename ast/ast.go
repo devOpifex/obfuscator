@@ -179,32 +179,6 @@ func (fl *FloatLiteral) expressionNode()      {}
 func (fl *FloatLiteral) TokenLiteral() string { return fl.Token.Value }
 func (fl *FloatLiteral) String() string       { return fl.Token.Value }
 
-type VectorLiteral struct {
-	Token token.Item
-	Value []Expression
-}
-
-func (v *VectorLiteral) Item() token.Item     { return v.Token }
-func (v *VectorLiteral) expressionNode()      {}
-func (v *VectorLiteral) TokenLiteral() string { return v.Token.Value }
-func (v *VectorLiteral) String() string {
-	var out bytes.Buffer
-
-	out.WriteString("c(")
-	for i, e := range v.Value {
-		if e == nil {
-			continue
-		}
-		out.WriteString(e.String())
-		if i < len(v.Value)-1 {
-			out.WriteString(", ")
-		}
-	}
-	out.WriteString(")\n")
-
-	return out.String()
-}
-
 type SquareRightLiteral struct {
 	Token token.Item
 	Value string
@@ -349,24 +323,15 @@ func (ie *InfixExpression) String() string {
 	var out bytes.Buffer
 
 	out.WriteString(ie.Left.String())
-	if ie.Operator != "::" && ie.Operator != "$" && ie.Operator != ".." {
-		out.WriteString(" ")
-	}
-
-	if ie.Operator != ".." {
+	if ie.Operator == "<-" {
+		out.WriteString("=")
+	} else {
 		out.WriteString(ie.Operator)
 	}
+	out.WriteString(ie.Right.String())
 
-	if ie.Operator == ".." {
-		out.WriteString(":")
-	}
-
-	if ie.Operator != "::" && ie.Operator != "$" && ie.Operator != ".." {
-		out.WriteString(" ")
-	}
-
-	if ie.Right != nil {
-		out.WriteString(ie.Right.String())
+	if ie.Operator == "<-" {
+		out.WriteString(";")
 	}
 
 	return out.String()
@@ -387,14 +352,14 @@ func (ie *IfExpression) String() string {
 
 	out.WriteString("if(")
 	out.WriteString(ie.Condition.String())
-	out.WriteString("){\n")
+	out.WriteString("){")
 	out.WriteString(ie.Consequence.String())
 	out.WriteString("}")
 
 	if ie.Alternative != nil {
-		out.WriteString(" else {\n")
+		out.WriteString("else{")
 		out.WriteString(ie.Alternative.String())
-		out.WriteString("\n}\n")
+		out.WriteString("}")
 	}
 
 	return out.String()
@@ -402,7 +367,7 @@ func (ie *IfExpression) String() string {
 
 type FunctionLiteral struct {
 	Token      token.Item // The 'function' token
-	Parameters []*Parameter
+	Parameters []*ExpressionStatement
 	Body       *BlockStatement
 }
 
@@ -412,19 +377,14 @@ func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Value }
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
 
-	params := []string{}
-	for _, p := range fl.Parameters {
-		params = append(params, p.String())
-	}
-
-	out.WriteString("function")
+	out.WriteString("\\")
 	out.WriteString("(")
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") {\n")
-	if fl.Body != nil {
-		out.WriteString(fl.Body.String())
+	for _, p := range fl.Parameters {
+		out.WriteString(p.String())
 	}
-	out.WriteString("}\n")
+	out.WriteString("){")
+	out.WriteString(fl.Body.String())
+	out.WriteString("}")
 
 	return out.String()
 }
@@ -475,8 +435,8 @@ func (ce *CallExpression) String() string {
 
 	out.WriteString(ce.Name)
 	out.WriteString("(")
-	out.WriteString(strings.Join(args, ", "))
-	out.WriteString(")\n")
+	out.WriteString(strings.Join(args, ","))
+	out.WriteString(")")
 
 	return out.String()
 }

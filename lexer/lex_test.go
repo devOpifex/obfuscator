@@ -164,6 +164,8 @@ code.obfuscator <- function(x) {
 
   invisible(code)
 }
+
+x <- c(1, 2)
 `
 
 	l := NewTest(code)

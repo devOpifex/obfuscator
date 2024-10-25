@@ -71,7 +71,6 @@ var ItemName = map[ItemType]string{
 	ItemTypesDecl:         "type declaration",
 	ItemBang:              "bang",
 	ItemThreeDot:          "elipsis",
-	ItemAttribute:         "attribute",
 }
 
 func (t ItemType) String() string {

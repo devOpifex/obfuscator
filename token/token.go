@@ -35,9 +35,6 @@ const (
 	// infix %>%
 	ItemInfix
 
-	// attribute follow $
-	ItemAttribute
-
 	// comma,
 	ItemComma
 

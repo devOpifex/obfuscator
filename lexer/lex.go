@@ -358,7 +358,7 @@ func lexDefault(l *Lexer) stateFn {
 	if r1 == '$' {
 		l.next()
 		l.emit(token.ItemDollar)
-		return lexAttribute
+		return lexDefault
 	}
 
 	if r1 == ',' {
@@ -592,11 +592,6 @@ func lexIdentifier(l *Lexer) stateFn {
 		return lexDefault
 	}
 
-	if tk == "return" {
-		l.emit(token.ItemReturn)
-		return lexDefault
-	}
-
 	if tk == "NULL" {
 		l.emit(token.ItemNULL)
 		return lexDefault
@@ -620,21 +615,6 @@ func lexIdentifier(l *Lexer) stateFn {
 	if tk == "for" {
 		l.emit(token.ItemFor)
 		return lexFor
-	}
-
-	if tk == "repeat" {
-		l.emit(token.ItemRepeat)
-		return lexDefault
-	}
-
-	if tk == "next" {
-		l.emit(token.ItemNext)
-		return lexDefault
-	}
-
-	if tk == "break" {
-		l.emit(token.ItemBreak)
-		return lexDefault
 	}
 
 	if tk == "function" {
@@ -679,14 +659,6 @@ func lexFor(l *Lexer) stateFn {
 	l.emit(token.ItemLeftParen)
 
 	return lexIdentifier
-}
-
-func lexAttribute(l *Lexer) stateFn {
-	l.acceptRun(stringAlpha + "._")
-
-	l.emit(token.ItemAttribute)
-
-	return lexDefault
 }
 
 func (l *Lexer) acceptNumber() bool {

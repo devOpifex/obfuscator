@@ -14,13 +14,10 @@ func TestBasic(t *testing.T) {
 
 	foo(2, 3)
 
-	library(ambiorix)
-
-	app <- Ambiorix$new()
-
-	app$get("/about", \(req, res) {
-	  res$send("hello")
-	})`
+	bar <- function(z = NULL, c = "hello") {
+	  z$u <- v
+		return(z)
+	}`
 
 	l := lexer.NewTest(code)
 
