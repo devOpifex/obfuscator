@@ -39,7 +39,6 @@ var precedences = map[token.ItemType]int{
 	token.ItemNamespaceInternal: EQUALS,
 	token.ItemLeftSquare:        EQUALS,
 	token.ItemDoubleLeftSquare:  EQUALS,
-	token.ItemComma:             PRODUCT,
 }
 
 type (
@@ -68,7 +67,6 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.prefixParseFns = make(map[token.ItemType]prefixParseFn)
 	p.registerPrefix(token.ItemIdent, p.parseIdentifier)
-	//p.registerPrefix(token.ItemComma, p.parseComma)
 	p.registerPrefix(token.ItemInteger, p.parseIntegerLiteral)
 	p.registerPrefix(token.ItemFloat, p.parseFloatLiteral)
 	p.registerPrefix(token.ItemBang, p.parsePrefixExpression)
@@ -92,6 +90,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemWhile, p.parseWhile)
 	p.registerPrefix(token.ItemRightSquare, p.parseSquare)
 	p.registerPrefix(token.ItemDoubleRightSquare, p.parseSquare)
+	p.registerPrefix(token.ItemRightParen, p.parseSquare)
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
 	p.registerInfix(token.ItemPlus, p.parseInfixExpression)
@@ -104,7 +103,6 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.ItemLessThan, p.parseInfixExpression)
 	p.registerInfix(token.ItemGreaterThan, p.parseInfixExpression)
 	p.registerInfix(token.ItemPipe, p.parseInfixExpression)
-	p.registerInfix(token.ItemComma, p.parseInfixExpression)
 	p.registerInfix(token.ItemDollar, p.parseInfixExpression)
 	p.registerInfix(token.ItemColon, p.parseInfixExpression)
 	p.registerInfix(token.ItemNamespace, p.parseInfixExpression)
@@ -306,16 +304,8 @@ func (p *Parser) parseWhile() ast.Expression {
 	return lit
 }
 
-func (p *Parser) parseComma() ast.Expression {
-	return &ast.Comma{Token: p.curToken}
-}
-
 func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Value}
-}
-
-func (p *Parser) parseAttribute() ast.Expression {
-	return &ast.Attribute{Token: p.curToken, Value: p.curToken.Value}
 }
 
 func (p *Parser) parseNull() ast.Expression {
@@ -586,8 +576,6 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 func (p *Parser) parseFunctionParameters() []*ast.ExpressionStatement {
 	Statements := []*ast.ExpressionStatement{}
 
-	p.nextToken()
-
 	for !p.curTokenIs(token.ItemRightParen) && !p.curTokenIs(token.ItemEOF) {
 		stmt := p.parseExpressionStatement()
 		if stmt != nil {
@@ -596,6 +584,12 @@ func (p *Parser) parseFunctionParameters() []*ast.ExpressionStatement {
 
 		if p.curTokenIs(token.ItemRightParen) {
 			break
+		}
+
+		if p.peekTokenIs(token.ItemComma) {
+			p.nextToken()
+			p.nextToken()
+			continue
 		}
 
 		p.nextToken()
@@ -611,20 +605,15 @@ func (p *Parser) parseSquare() ast.Expression {
 }
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
-	fmt.Println(function.Item().Value)
 	exp := &ast.CallExpression{Token: p.curToken, Name: function.Item().Value}
 
-	exp.Arguments = p.parseCallArguments()
+	p.nextToken()
+	exp.Arguments = p.parseFunctionParameters()
 
 	// skip last token
 	p.nextToken()
 
 	if p.peekTokenIs(token.ItemRightParen) {
-		p.nextToken()
-	}
-
-	// if it's a nested call we may have a trailing
-	if p.peekTokenIs(token.ItemComma) {
 		p.nextToken()
 	}
 
@@ -638,6 +627,7 @@ func (p *Parser) parseCallArguments() []ast.Argument {
 		return args
 	}
 
+	p.print()
 	for !p.peekTokenIs(token.ItemRightParen) && !p.peekTokenIs(token.ItemComma) {
 		p.nextToken()
 

@@ -7,33 +7,33 @@ import (
 	"github.com/sparkle-tech/obfuscator/environment"
 )
 
-type Transpiler struct {
+type Obfuscator struct {
 	code []string
 	env  *environment.Environment
 }
 
-func (t *Transpiler) Env() *environment.Environment {
+func (t *Obfuscator) Env() *environment.Environment {
 	return t.env
 }
 
-func New() *Transpiler {
+func New() *Obfuscator {
 	env := environment.New()
 
-	return &Transpiler{
+	return &Obfuscator{
 		env: env,
 	}
 }
 
-func (t *Transpiler) Transpile(node ast.Node) ast.Node {
+func (t *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 	switch node := node.(type) {
 
 	// Statements
 	case *ast.Program:
-		return t.transpileProgram(node)
+		return t.obfuscateProgram(node)
 
 	case *ast.ExpressionStatement:
 		if node.Expression != nil {
-			return t.Transpile(node.Expression)
+			return t.Obfuscate(node.Expression)
 		}
 
 	case *ast.Comma:
@@ -50,7 +50,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
-			t.Transpile(s)
+			t.Obfuscate(s)
 		}
 
 	case *ast.Attribute:
@@ -75,26 +75,26 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 	case *ast.PrefixExpression:
 		t.addCode("(" + node.Operator)
-		t.Transpile(node.Right)
+		t.Obfuscate(node.Right)
 		t.addCode(")")
 
 	case *ast.For:
 		t.addCode("for(")
 		t.addCode(node.Name)
 		t.addCode(" in ")
-		t.Transpile(node.Vector)
-		t.addCode(") {")
+		t.Obfuscate(node.Vector)
+		t.addCode("){")
 		t.env = environment.Enclose(t.env)
-		t.Transpile(node.Value)
+		t.Obfuscate(node.Value)
 		t.addCode("}")
 		t.env = environment.Open(t.env)
 
 	case *ast.While:
 		t.addCode("while(")
-		t.Transpile(node.Statement)
-		t.addCode(") {")
+		t.Obfuscate(node.Statement)
+		t.addCode("){")
 		t.env = environment.Enclose(t.env)
-		t.Transpile(node.Value)
+		t.Obfuscate(node.Value)
 		t.addCode("}")
 		t.env = environment.Open(t.env)
 
@@ -104,7 +104,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 		if node.Left != nil {
-			t.Transpile(node.Left)
+			t.Obfuscate(node.Left)
 		}
 
 		if node.Operator == "in" {
@@ -114,7 +114,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 		if node.Right != nil {
-			t.Transpile(node.Right)
+			t.Obfuscate(node.Right)
 		}
 
 		if node.Operator == "<-" {
@@ -126,17 +126,17 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 	case *ast.IfExpression:
 		t.addCode("if(")
-		t.Transpile(node.Condition)
+		t.Obfuscate(node.Condition)
 		t.addCode("){")
 		t.env = environment.Enclose(t.env)
-		t.Transpile(node.Consequence)
+		t.Obfuscate(node.Consequence)
 		t.env = environment.Open(t.env)
 		t.addCode("}")
 
 		if node.Alternative != nil {
 			t.addCode(" else {")
 			t.env = environment.Enclose(t.env)
-			t.Transpile(node.Alternative)
+			t.Obfuscate(node.Alternative)
 			t.env = environment.Open(t.env)
 			t.addCode("}")
 		}
@@ -154,12 +154,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 				},
 			)
 
-			t.addCode(p.Name)
-
-			if p.Operator == "=" {
-				t.addCode("=")
-				t.Transpile(p.Default)
-			}
+			t.Obfuscate(p.Expression)
 
 			if i < len(node.Parameters)-1 {
 				t.addCode(",")
@@ -168,34 +163,33 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 		t.addCode("){")
 		if node.Body != nil {
-			t.Transpile(node.Body)
+			t.Obfuscate(node.Body)
 		}
 
 		t.env = environment.Open(t.env)
 		t.addCode("}")
 
 	case *ast.CallExpression:
-		t.transpileCallExpression(node)
-		t.addCode(";")
+		t.obfuscateCallExpression(node)
 	}
 
 	return node
 }
 
-func (t *Transpiler) transpileProgram(program *ast.Program) ast.Node {
+func (t *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 	var node ast.Node
 
 	for _, statement := range program.Statements {
-		t.Transpile(statement)
+		t.Obfuscate(statement)
 	}
 
 	return node
 }
 
-func (t *Transpiler) transpileCallExpression(node *ast.CallExpression) {
+func (t *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
 	t.addCode(node.Name + "(")
 	for i, a := range node.Arguments {
-		t.Transpile(a.Value)
+		t.Obfuscate(a.Value)
 		if i < len(node.Arguments)-1 {
 			t.addCode(",")
 		}
@@ -203,10 +197,10 @@ func (t *Transpiler) transpileCallExpression(node *ast.CallExpression) {
 	t.addCode(")")
 }
 
-func (t *Transpiler) GetCode() string {
+func (t *Obfuscator) GetCode() string {
 	return strings.Join(t.code, "")
 }
 
-func (t *Transpiler) addCode(code string) {
+func (t *Obfuscator) addCode(code string) {
 	t.code = append(t.code, code)
 }

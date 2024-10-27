@@ -7,7 +7,7 @@ import (
 	"github.com/sparkle-tech/obfuscator/parser"
 )
 
-func (trans *Transpiler) testOutput(t *testing.T, expected string) {
+func (trans *Obfuscator) testOutput(t *testing.T, expected string) {
 	if trans.GetCode() == expected {
 		return
 	}
@@ -26,7 +26,7 @@ func TestBasic(t *testing.T) {
 	u <- 3
 	foo(x = u)
 
-	bar <- function(x = list(x = c(2)), y = "hello") {
+	bar <- function(x = list(x = 1), y = "hello") {
 	  x$x <- y
 		return(x)
 	}
@@ -41,7 +41,7 @@ func TestBasic(t *testing.T) {
 	prog := p.Run()
 
 	trans := New()
-	trans.Transpile(prog)
+	trans.Obfuscate(prog)
 
 	expectations := `x=1;y=2;foo=\(x){x+1};foo(x=2)`
 	trans.testOutput(t, expectations)

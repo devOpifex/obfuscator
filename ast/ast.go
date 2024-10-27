@@ -376,12 +376,14 @@ func (fl *FunctionLiteral) expressionNode()      {}
 func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Value }
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
+	args := []string{}
+	for _, a := range fl.Parameters {
+		args = append(args, a.String())
+	}
 
 	out.WriteString("\\")
 	out.WriteString("(")
-	for _, p := range fl.Parameters {
-		out.WriteString(p.String())
-	}
+	out.WriteString(strings.Join(args, ","))
 	out.WriteString("){")
 	out.WriteString(fl.Body.String())
 	out.WriteString("}")
@@ -419,7 +421,7 @@ type Argument struct {
 type CallExpression struct {
 	Token     token.Item // The '(' token
 	Name      string
-	Arguments []Argument
+	Arguments []*ExpressionStatement
 }
 
 func (ce *CallExpression) Item() token.Item     { return ce.Token }
@@ -430,7 +432,7 @@ func (ce *CallExpression) String() string {
 
 	args := []string{}
 	for _, a := range ce.Arguments {
-		args = append(args, a.Value.String())
+		args = append(args, a.String())
 	}
 
 	out.WriteString(ce.Name)
