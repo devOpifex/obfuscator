@@ -90,7 +90,6 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemWhile, p.parseWhile)
 	p.registerPrefix(token.ItemRightSquare, p.parseSquare)
 	p.registerPrefix(token.ItemDoubleRightSquare, p.parseSquare)
-	p.registerPrefix(token.ItemRightParen, p.parseSquare)
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
 	p.registerInfix(token.ItemPlus, p.parseInfixExpression)
@@ -125,14 +124,6 @@ func (p *Parser) nextToken() {
 	}
 	p.peekToken = p.l.Items[p.pos]
 	p.pos++
-}
-
-func (p *Parser) previousToken(n int) {
-	for i := 0; i < n; i++ {
-		p.pos--
-		p.curToken = p.l.Items[p.pos-2]
-		p.peekToken = p.l.Items[p.pos-1]
-	}
 }
 
 func (p *Parser) print() {
@@ -548,6 +539,11 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 		if stmt != nil {
 			block.Statements = append(block.Statements, stmt)
 		}
+
+		if p.curTokenIs(token.ItemRightCurly) {
+			return block
+		}
+
 		p.nextToken()
 	}
 
@@ -574,12 +570,19 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 }
 
 func (p *Parser) parseFunctionParameters() []*ast.ExpressionStatement {
-	Statements := []*ast.ExpressionStatement{}
+	statements := []*ast.ExpressionStatement{}
+
+	if p.peekTokenIs(token.ItemRightParen) {
+		stmt := p.parseExpressionStatement()
+		statements = append(statements, stmt)
+		p.nextToken()
+		return statements
+	}
 
 	for !p.curTokenIs(token.ItemRightParen) && !p.curTokenIs(token.ItemEOF) {
 		stmt := p.parseExpressionStatement()
 		if stmt != nil {
-			Statements = append(Statements, stmt)
+			statements = append(statements, stmt)
 		}
 
 		if p.curTokenIs(token.ItemRightParen) {
@@ -595,7 +598,7 @@ func (p *Parser) parseFunctionParameters() []*ast.ExpressionStatement {
 		p.nextToken()
 	}
 
-	return Statements
+	return statements
 }
 
 func (p *Parser) parseSquare() ast.Expression {
@@ -610,47 +613,10 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	p.nextToken()
 	exp.Arguments = p.parseFunctionParameters()
 
-	// skip last token
-	p.nextToken()
-
-	if p.peekTokenIs(token.ItemRightParen) {
+	if !p.peekTokenIs(token.ItemIdent) {
 		p.nextToken()
 	}
-
 	return exp
-}
-
-func (p *Parser) parseCallArguments() []ast.Argument {
-	args := []ast.Argument{}
-
-	if p.peekTokenIs(token.ItemRightParen) {
-		return args
-	}
-
-	p.print()
-	for !p.peekTokenIs(token.ItemRightParen) && !p.peekTokenIs(token.ItemComma) {
-		p.nextToken()
-
-		var arg ast.Argument
-		if p.peekTokenIs(token.ItemAssign) {
-			arg.Name = p.curToken.Value
-		}
-		arg.Token = p.curToken
-
-		arg.Value = p.parseExpression(LOWEST)
-
-		args = append(args, arg)
-
-		if p.curTokenIs(token.ItemRightParen) {
-			return args
-		}
-
-		if p.peekTokenIs(token.ItemComma) {
-			p.nextToken()
-		}
-	}
-
-	return args
 }
 
 func (p *Parser) registerPrefix(tokenType token.ItemType, fn prefixParseFn) {

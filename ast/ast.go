@@ -91,6 +91,7 @@ func (bs *BlockStatement) String() string {
 
 	for _, s := range bs.Statements {
 		out.WriteString(s.String())
+		out.WriteString(";")
 	}
 
 	return out.String()
@@ -325,13 +326,12 @@ func (ie *InfixExpression) String() string {
 	out.WriteString(ie.Left.String())
 	if ie.Operator == "<-" {
 		out.WriteString("=")
-	} else {
-		out.WriteString(ie.Operator)
 	}
-	out.WriteString(ie.Right.String())
 
-	if ie.Operator == "<-" {
-		out.WriteString(";")
+	out.WriteString(ie.Operator)
+
+	if ie.Right != nil {
+		out.WriteString(ie.Right.String())
 	}
 
 	return out.String()

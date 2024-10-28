@@ -13,7 +13,12 @@ func TestBasic(t *testing.T) {
 		return(z)
 	}
 
-	bar(list(x = 2), c = list(v = c(1)))`
+	x <- 1
+
+	bar(list(x = 2), c = list(v = c(1, 2)), x = 2)
+
+	u <- sum(2, 3, 4)
+	`
 
 	l := lexer.NewTest(code)
 

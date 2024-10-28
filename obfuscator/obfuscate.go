@@ -51,6 +51,7 @@ func (t *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
 			t.Obfuscate(s)
+			t.addCode(";")
 		}
 
 	case *ast.Attribute:
@@ -103,6 +104,10 @@ func (t *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 			t.addCode(" ")
 		}
 
+		if node.Operator == "<-" {
+			node.Operator = "="
+		}
+
 		if node.Left != nil {
 			t.Obfuscate(node.Left)
 		}
@@ -115,10 +120,6 @@ func (t *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 
 		if node.Right != nil {
 			t.Obfuscate(node.Right)
-		}
-
-		if node.Operator == "<-" {
-			t.addCode(";")
 		}
 
 	case *ast.Square:
@@ -181,6 +182,7 @@ func (t *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 
 	for _, statement := range program.Statements {
 		t.Obfuscate(statement)
+		t.addCode(";")
 	}
 
 	return node
@@ -189,7 +191,7 @@ func (t *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 func (t *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
 	t.addCode(node.Name + "(")
 	for i, a := range node.Arguments {
-		t.Obfuscate(a.Value)
+		t.Obfuscate(a)
 		if i < len(node.Arguments)-1 {
 			t.addCode(",")
 		}

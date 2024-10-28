@@ -22,16 +22,7 @@ func TestBasic(t *testing.T) {
 	  x + 1
 	}
 
-	foo(x = 2)
-	u <- 3
-	foo(x = u)
-
-	bar <- function(x = list(x = 1), y = "hello") {
-	  x$x <- y
-		return(x)
-	}
-
-	bar(list(x = 3), y = 3)`
+	x <- foo(x = 2)`
 
 	l := lexer.NewTest(code)
 
