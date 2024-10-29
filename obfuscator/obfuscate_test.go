@@ -18,11 +18,12 @@ func TestBasic(t *testing.T) {
 	code := `x <- 1
 	y <- 2
 
-	foo <- function(x){
-	  x + 1
+	foo <- function(x, y = y){
+	  total <- sum(x, y)
+		return(total)
 	}
 
-	x <- foo(x = 2)`
+	results <- foo(x = 2)`
 
 	l := lexer.NewTest(code)
 
@@ -31,9 +32,9 @@ func TestBasic(t *testing.T) {
 
 	prog := p.Run()
 
-	trans := New()
-	trans.Obfuscate(prog)
+	o := New()
+	o.Obfuscate(prog)
 
 	expectations := `x=1;y=2;foo=\(x){x+1};foo(x=2)`
-	trans.testOutput(t, expectations)
+	o.testOutput(t, expectations)
 }

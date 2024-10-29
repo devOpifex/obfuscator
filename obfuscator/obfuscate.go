@@ -24,84 +24,94 @@ func New() *Obfuscator {
 	}
 }
 
-func (t *Obfuscator) Obfuscate(node ast.Node) ast.Node {
+func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 	switch node := node.(type) {
 
 	// Statements
 	case *ast.Program:
-		return t.obfuscateProgram(node)
+		return o.obfuscateProgram(node)
 
 	case *ast.ExpressionStatement:
 		if node.Expression != nil {
-			return t.Obfuscate(node.Expression)
+			return o.Obfuscate(node.Expression)
 		}
 
 	case *ast.Comma:
-		t.addCode(",")
+		o.addCode(",")
 
 	case *ast.Null:
-		t.addCode("NULL")
+		o.addCode("NULL")
 
 	case *ast.Keyword:
-		t.addCode(node.Value)
+		o.addCode(node.Value)
 
 	case *ast.CommentStatement:
-		t.addCode("")
+		o.addCode("")
 
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
-			t.Obfuscate(s)
-			t.addCode(";")
+			o.Obfuscate(s)
+			o.addCode(";")
 		}
 
-	case *ast.Attribute:
-		t.addCode(node.Value)
-		return node
-
 	case *ast.Identifier:
-		t.addCode(node.Value)
+		v, ok := o.env.GetVariable(node.Value, true)
+
+		if ok {
+			o.addCode(v.Obfuscated)
+			return node
+		}
+
+		fn, ok := o.env.GetFunction(node.Value, true)
+
+		if ok {
+			o.addCode(fn.Obfuscated)
+			return node
+		}
+
+		o.addCode(node.Value)
 		return node
 
 	case *ast.Boolean:
-		t.addCode(strings.ToUpper(node.String()))
+		o.addCode(strings.ToUpper(node.String()))
 
 	case *ast.IntegerLiteral:
-		t.addCode(node.Value)
+		o.addCode(node.Value)
 
 	case *ast.FloatLiteral:
-		t.addCode(node.Value)
+		o.addCode(node.Value)
 
 	case *ast.StringLiteral:
-		t.addCode(node.Token.Value + node.Str + node.Token.Value)
+		o.addCode(node.Token.Value + node.Str + node.Token.Value)
 
 	case *ast.PrefixExpression:
-		t.addCode("(" + node.Operator)
-		t.Obfuscate(node.Right)
-		t.addCode(")")
+		o.addCode("(" + node.Operator)
+		o.Obfuscate(node.Right)
+		o.addCode(")")
 
 	case *ast.For:
-		t.addCode("for(")
-		t.addCode(node.Name)
-		t.addCode(" in ")
-		t.Obfuscate(node.Vector)
-		t.addCode("){")
-		t.env = environment.Enclose(t.env)
-		t.Obfuscate(node.Value)
-		t.addCode("}")
-		t.env = environment.Open(t.env)
+		o.addCode("for(")
+		o.addCode(node.Name)
+		o.addCode(" in ")
+		o.Obfuscate(node.Vector)
+		o.addCode("){")
+		o.env = environment.Enclose(o.env)
+		o.Obfuscate(node.Value)
+		o.addCode("}")
+		o.env = environment.Open(o.env)
 
 	case *ast.While:
-		t.addCode("while(")
-		t.Obfuscate(node.Statement)
-		t.addCode("){")
-		t.env = environment.Enclose(t.env)
-		t.Obfuscate(node.Value)
-		t.addCode("}")
-		t.env = environment.Open(t.env)
+		o.addCode("while(")
+		o.Obfuscate(node.Statement)
+		o.addCode("){")
+		o.env = environment.Enclose(o.env)
+		o.Obfuscate(node.Value)
+		o.addCode("}")
+		o.env = environment.Open(o.env)
 
 	case *ast.InfixExpression:
 		if node.Operator == "in" {
-			t.addCode(" ")
+			o.addCode(" ")
 		}
 
 		if node.Operator == "<-" {
@@ -109,100 +119,100 @@ func (t *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 		}
 
 		if node.Left != nil {
-			t.Obfuscate(node.Left)
+			o.Obfuscate(node.Left)
 		}
 
+		o.addCode(node.Operator)
+
 		if node.Operator == "in" {
-			t.addCode(" ")
-		} else {
-			t.addCode(node.Operator)
+			o.addCode(" ")
 		}
 
 		if node.Right != nil {
-			t.Obfuscate(node.Right)
+			o.Obfuscate(node.Right)
 		}
 
 	case *ast.Square:
-		t.addCode(node.Token.Value)
+		o.addCode(node.Token.Value)
 
 	case *ast.IfExpression:
-		t.addCode("if(")
-		t.Obfuscate(node.Condition)
-		t.addCode("){")
-		t.env = environment.Enclose(t.env)
-		t.Obfuscate(node.Consequence)
-		t.env = environment.Open(t.env)
-		t.addCode("}")
+		o.addCode("if(")
+		o.Obfuscate(node.Condition)
+		o.addCode("){")
+		o.env = environment.Enclose(o.env)
+		o.Obfuscate(node.Consequence)
+		o.env = environment.Open(o.env)
+		o.addCode("}")
 
 		if node.Alternative != nil {
-			t.addCode(" else {")
-			t.env = environment.Enclose(t.env)
-			t.Obfuscate(node.Alternative)
-			t.env = environment.Open(t.env)
-			t.addCode("}")
+			o.addCode("else{")
+			o.env = environment.Enclose(o.env)
+			o.Obfuscate(node.Alternative)
+			o.env = environment.Open(o.env)
+			o.addCode("}")
 		}
 
 	case *ast.FunctionLiteral:
-		t.env = environment.Enclose(t.env)
+		o.env = environment.Enclose(o.env)
 
-		t.addCode("\\(")
+		o.addCode("\\(")
 
 		for i, p := range node.Parameters {
-			t.env.SetVariable(
-				p.Token.Value,
-				environment.Variable{
-					Token: p.Token,
-				},
-			)
-
-			t.Obfuscate(p.Expression)
+			o.Obfuscate(p.Expression)
 
 			if i < len(node.Parameters)-1 {
-				t.addCode(",")
+				o.addCode(",")
 			}
 		}
 
-		t.addCode("){")
+		o.addCode("){")
 		if node.Body != nil {
-			t.Obfuscate(node.Body)
+			o.Obfuscate(node.Body)
 		}
 
-		t.env = environment.Open(t.env)
-		t.addCode("}")
+		o.env = environment.Open(o.env)
+		o.addCode("}")
 
 	case *ast.CallExpression:
-		t.obfuscateCallExpression(node)
+		o.obfuscateCallExpression(node)
 	}
 
 	return node
 }
 
-func (t *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
+func (o *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 	var node ast.Node
 
 	for _, statement := range program.Statements {
-		t.Obfuscate(statement)
-		t.addCode(";")
+		o.Obfuscate(statement)
+		o.addCode(";")
 	}
 
 	return node
 }
 
-func (t *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
-	t.addCode(node.Name + "(")
+func (o *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
+	name := node.Name
+	fn, ok := o.env.GetFunction(name, true)
+
+	if ok {
+		name = fn.Obfuscated
+	}
+
+	o.addCode(name + "(")
 	for i, a := range node.Arguments {
-		t.Obfuscate(a)
+		o.Obfuscate(a)
 		if i < len(node.Arguments)-1 {
-			t.addCode(",")
+			o.addCode(",")
 		}
 	}
-	t.addCode(")")
+	o.addCode(")")
 }
 
-func (t *Obfuscator) GetCode() string {
-	return strings.Join(t.code, "")
+func (o *Obfuscator) GetCode() string {
+	return strings.Join(o.code, "")
 }
 
-func (t *Obfuscator) addCode(code string) {
-	t.code = append(t.code, code)
+func (o *Obfuscator) addCode(code string) {
+	o.code = append(o.code, code)
 }

@@ -83,7 +83,7 @@ func (e *Environment) SetFunction(name string, val Function) Function {
 }
 
 func mask() string {
-	var letterRunes = []rune("-!?_|./\\abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	var letterRunes = []rune("-!?_./|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 	b := make([]rune, 22)
 	for i := range b {
