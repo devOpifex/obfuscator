@@ -493,6 +493,12 @@ func lexNumber(l *Lexer) stateFn {
 		return lexDefault
 	}
 
+	if l.peek(1) == 'L' {
+		l.next()
+		l.emit(token.ItemInteger)
+		return lexDefault
+	}
+
 	l.emit(token.ItemInteger)
 	return lexDefault
 }
