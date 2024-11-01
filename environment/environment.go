@@ -40,32 +40,15 @@ func (e *Environment) GetVariable(name string, outer bool) (Variable, bool) {
 	return obj, ok
 }
 
-func (e *Environment) GetVariableParent(name string) (Variable, bool) {
-	if e.outer == nil {
-		return Variable{}, false
+func (e *Environment) SetVariable(name string, val Variable) Variable {
+	_, ok := e.GetVariable(name, false)
+	if ok {
+		return val
 	}
 
-	obj, ok := e.outer.GetVariable(name, true)
-
-	return obj, ok
-}
-
-func (e *Environment) SetVariable(name string, val Variable) Variable {
 	val.Obfuscated = mask()
 	e.variables[name] = val
 	return val
-}
-
-func (e *Environment) SetVariableUsed(name string) (Variable, bool) {
-	obj, ok := e.variables[name]
-
-	if !ok && e.outer != nil {
-		return e.outer.SetVariableUsed(name)
-	}
-
-	e.variables[name] = obj
-
-	return obj, ok
 }
 
 func (e *Environment) GetFunction(name string, outer bool) (Function, bool) {
@@ -77,6 +60,11 @@ func (e *Environment) GetFunction(name string, outer bool) (Function, bool) {
 }
 
 func (e *Environment) SetFunction(name string, val Function) Function {
+	_, ok := e.GetFunction(name, true)
+	if ok {
+		return val
+	}
+
 	val.Obfuscated = mask()
 	e.functions[name] = val
 	return val

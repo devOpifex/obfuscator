@@ -1,4 +1,4 @@
-package transpiler
+package obfuscator
 
 import (
 	"github.com/sparkle-tech/obfuscator/ast"
@@ -6,8 +6,8 @@ import (
 )
 
 type Obfuscator struct {
-	code []string
-	env  *environment.Environment
+	env   *environment.Environment
+	stack stack
 }
 
 func New(env *environment.Environment) *Obfuscator {
@@ -34,7 +34,6 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 		}
 
 	case *ast.Identifier:
-		o.addCode(node.Value)
 		return node
 
 	case *ast.PrefixExpression:
@@ -53,13 +52,8 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 		o.env = environment.Open(o.env)
 
 	case *ast.InfixExpression:
-		if node.Left != nil {
-			o.Obfuscate(node.Left)
-		}
-
-		if node.Right != nil {
-			o.Obfuscate(node.Right)
-		}
+		o.Obfuscate(node.Left)
+		o.Obfuscate(node.Right)
 
 	case *ast.IfExpression:
 		o.Obfuscate(node.Condition)
@@ -95,23 +89,16 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 
 func (o *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 	var node ast.Node
-
 	for _, statement := range program.Statements {
 		o.Obfuscate(statement)
 	}
-
 	return node
 }
 
 func (o *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
-	name := node.Name
-	fn, ok := o.env.GetFunction(name, true)
-
-	if ok {
-		name = fn.Obfuscated
-	}
-
+	o.stack = o.stack.push(node.Name)
 	for _, a := range node.Arguments {
 		o.Obfuscate(a)
 	}
+	o.stack = o.stack.pop()
 }
