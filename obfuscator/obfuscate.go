@@ -55,6 +55,21 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 		o.Obfuscate(node.Left)
 		o.Obfuscate(node.Right)
 
+		switch l := node.Left.(type) {
+		case *ast.Identifier:
+			switch n := node.Right.(type) {
+			case *ast.FunctionLiteral:
+				o.env.SetFunction(l.Value, environment.Function{
+					Name:  l.Value,
+					Value: n,
+				})
+			default:
+				o.env.SetVariable(l.Value, environment.Variable{
+					Name: l.Value,
+				})
+			}
+		}
+
 	case *ast.IfExpression:
 		o.Obfuscate(node.Condition)
 		o.env = environment.Enclose(o.env)

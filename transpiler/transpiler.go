@@ -18,7 +18,7 @@ func New(env *environment.Environment) *Transpiler {
 	}
 }
 
-func (t *Transpiler) Obfuscate(node ast.Node) ast.Node {
+func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 	switch node := node.(type) {
 
 	// Statements
@@ -27,7 +27,7 @@ func (t *Transpiler) Obfuscate(node ast.Node) ast.Node {
 
 	case *ast.ExpressionStatement:
 		if node.Expression != nil {
-			return t.Obfuscate(node.Expression)
+			return t.Transpile(node.Expression)
 		}
 
 	case *ast.Comma:
@@ -44,7 +44,7 @@ func (t *Transpiler) Obfuscate(node ast.Node) ast.Node {
 
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
-			t.Obfuscate(s)
+			t.Transpile(s)
 			t.addCode(";")
 		}
 
@@ -80,26 +80,26 @@ func (t *Transpiler) Obfuscate(node ast.Node) ast.Node {
 
 	case *ast.PrefixExpression:
 		t.addCode("(" + node.Operator)
-		t.Obfuscate(node.Right)
+		t.Transpile(node.Right)
 		t.addCode(")")
 
 	case *ast.For:
 		t.addCode("for(")
 		t.addCode(node.Name)
 		t.addCode(" in ")
-		t.Obfuscate(node.Vector)
+		t.Transpile(node.Vector)
 		t.addCode("){")
 		t.env = environment.Enclose(t.env)
-		t.Obfuscate(node.Value)
+		t.Transpile(node.Value)
 		t.addCode("}")
 		t.env = environment.Open(t.env)
 
 	case *ast.While:
 		t.addCode("while(")
-		t.Obfuscate(node.Statement)
+		t.Transpile(node.Statement)
 		t.addCode("){")
 		t.env = environment.Enclose(t.env)
-		t.Obfuscate(node.Value)
+		t.Transpile(node.Value)
 		t.addCode("}")
 		t.env = environment.Open(t.env)
 
@@ -113,7 +113,7 @@ func (t *Transpiler) Obfuscate(node ast.Node) ast.Node {
 		}
 
 		if node.Left != nil {
-			t.Obfuscate(node.Left)
+			t.Transpile(node.Left)
 		}
 
 		t.addCode(node.Operator)
@@ -123,7 +123,7 @@ func (t *Transpiler) Obfuscate(node ast.Node) ast.Node {
 		}
 
 		if node.Right != nil {
-			t.Obfuscate(node.Right)
+			t.Transpile(node.Right)
 		}
 
 	case *ast.Square:
@@ -131,17 +131,17 @@ func (t *Transpiler) Obfuscate(node ast.Node) ast.Node {
 
 	case *ast.IfExpression:
 		t.addCode("if(")
-		t.Obfuscate(node.Condition)
+		t.Transpile(node.Condition)
 		t.addCode("){")
 		t.env = environment.Enclose(t.env)
-		t.Obfuscate(node.Consequence)
+		t.Transpile(node.Consequence)
 		t.env = environment.Open(t.env)
 		t.addCode("}")
 
 		if node.Alternative != nil {
 			t.addCode("else{")
 			t.env = environment.Enclose(t.env)
-			t.Obfuscate(node.Alternative)
+			t.Transpile(node.Alternative)
 			t.env = environment.Open(t.env)
 			t.addCode("}")
 		}
@@ -152,7 +152,7 @@ func (t *Transpiler) Obfuscate(node ast.Node) ast.Node {
 		t.addCode("\\(")
 
 		for i, p := range node.Parameters {
-			t.Obfuscate(p.Expression)
+			t.Transpile(p.Expression)
 
 			if i < len(node.Parameters)-1 {
 				t.addCode(",")
@@ -161,7 +161,7 @@ func (t *Transpiler) Obfuscate(node ast.Node) ast.Node {
 
 		t.addCode("){")
 		if node.Body != nil {
-			t.Obfuscate(node.Body)
+			t.Transpile(node.Body)
 		}
 
 		t.env = environment.Open(t.env)
@@ -178,7 +178,7 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 	var node ast.Node
 
 	for _, statement := range program.Statements {
-		t.Obfuscate(statement)
+		t.Transpile(statement)
 		t.addCode(";")
 	}
 
@@ -195,7 +195,7 @@ func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 
 	t.addCode(name + "(")
 	for i, a := range node.Arguments {
-		t.Obfuscate(a)
+		t.Transpile(a)
 		if i < len(node.Arguments)-1 {
 			t.addCode(",")
 		}

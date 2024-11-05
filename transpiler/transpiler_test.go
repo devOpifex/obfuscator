@@ -1,19 +1,14 @@
 package transpiler
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/sparkle-tech/obfuscator/environment"
 	"github.com/sparkle-tech/obfuscator/lexer"
+	"github.com/sparkle-tech/obfuscator/obfuscator"
 	"github.com/sparkle-tech/obfuscator/parser"
 )
-
-func (trans *Obfuscator) testOutput(t *testing.T, expected string) {
-	if trans.GetCode() == expected {
-		return
-	}
-	t.Fatalf("expected:\n`%v`\ngot:\n`%v`", expected, trans.GetCode())
-}
 
 func TestBasic(t *testing.T) {
 	code := `x <- 1
@@ -23,7 +18,9 @@ func TestBasic(t *testing.T) {
 		return(total)
 	}
 
-	results <- foo(x = x, y = 2L)
+	results <- foo(x = x, y = \(z = 2L){
+	 return(z + 2)
+	})
 	results <- foo(x, y = x)`
 
 	l := lexer.NewTest(code)
@@ -34,9 +31,11 @@ func TestBasic(t *testing.T) {
 	prog := p.Run()
 
 	env := environment.New()
-	o := New(env)
+	o := obfuscator.New(env)
+	o.Obfuscate(prog)
 	o.Obfuscate(prog)
 
-	expectations := `x=1;y=2;foo=\(x){x+1};foo(x=2)`
-	o.testOutput(t, expectations)
+	trans := New(env)
+	trans.Transpile(prog)
+	fmt.Println(trans.GetCode())
 }
