@@ -2,9 +2,11 @@ package environment
 
 import (
 	"crypto/sha1"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 )
+
+var KEY string = "DEFAULT"
 
 type Environment struct {
 	variables map[string]Variable
@@ -20,6 +22,10 @@ func Enclose(outer *Environment) *Environment {
 
 func Open(env *Environment) *Environment {
 	return env.outer
+}
+
+func SetKey(key string) {
+	KEY = key
 }
 
 func New() *Environment {
@@ -73,7 +79,7 @@ func (e *Environment) SetFunction(name string, val Function) Function {
 
 func mask(txt string) string {
 	hasher := sha1.New()
-	hasher.Write([]byte(txt))
-	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+	hasher.Write([]byte(txt + KEY))
+	sha := hex.EncodeToString(hasher.Sum(nil))
 	return fmt.Sprintf("`%v`", sha)
 }

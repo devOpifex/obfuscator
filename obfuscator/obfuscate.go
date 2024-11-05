@@ -64,6 +64,9 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 					Value: n,
 				})
 			default:
+				if node.Operator != "=" {
+					break
+				}
 				o.env.SetVariable(l.Value, environment.Variable{
 					Name: l.Value,
 				})
