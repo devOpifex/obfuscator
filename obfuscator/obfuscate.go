@@ -6,8 +6,8 @@ import (
 )
 
 type Obfuscator struct {
-	env   *environment.Environment
-	stack Stack
+	env       *environment.Environment
+	callStack Stack
 }
 
 func New(env *environment.Environment) *Obfuscator {
@@ -64,9 +64,16 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 					Value: n,
 				})
 			default:
-				if node.Operator != "=" {
+				ok, _ := o.callStack.Get()
+
+				if ok {
 					break
 				}
+
+				if node.Operator == "$" {
+					break
+				}
+
 				o.env.SetVariable(l.Value, environment.Variable{
 					Name: l.Value,
 				})
@@ -100,6 +107,9 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 
 	case *ast.CallExpression:
 		o.obfuscateCallExpression(node)
+
+	case *ast.Method:
+		o.obfuscateMethod(node)
 	}
 
 	return node
@@ -114,9 +124,17 @@ func (o *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 }
 
 func (o *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
-	o.stack = o.stack.Push(node.Name)
+	o.callStack = o.callStack.Push(node.Name, false)
 	for _, a := range node.Arguments {
 		o.Obfuscate(a)
 	}
-	o.stack = o.stack.Pop()
+	o.callStack = o.callStack.Pop()
+}
+
+func (o *Obfuscator) obfuscateMethod(node *ast.Method) {
+	o.callStack = o.callStack.Push(node.Name, true)
+	for _, a := range node.Arguments {
+		o.Obfuscate(a)
+	}
+	o.callStack = o.callStack.Pop()
 }

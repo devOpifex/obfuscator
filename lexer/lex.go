@@ -157,6 +157,12 @@ func (l *Lexer) Run() {
 			l.Items = l.Items[:len(l.Items)-1]
 		}
 	}
+
+	for i := range l.Items {
+		if l.Items[i].Class == token.ItemDollar && l.Items[i+2].Class == token.ItemLeftParen {
+			l.Items[i+1].Class = token.ItemMethod
+		}
+	}
 }
 
 func (l *Lexer) Lex() {

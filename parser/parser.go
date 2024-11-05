@@ -90,6 +90,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemWhile, p.parseWhile)
 	p.registerPrefix(token.ItemRightSquare, p.parseSquare)
 	p.registerPrefix(token.ItemDoubleRightSquare, p.parseSquare)
+	p.registerPrefix(token.ItemMethod, p.parseMethod)
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
 	p.registerInfix(token.ItemPlus, p.parseInfixExpression)
@@ -610,6 +611,19 @@ func (p *Parser) parseSquare() ast.Expression {
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Name: function.Item().Value}
 
+	p.nextToken()
+	exp.Arguments = p.parseFunctionParameters()
+
+	if !p.peekTokenIs(token.ItemIdent) {
+		p.nextToken()
+	}
+	return exp
+}
+
+func (p *Parser) parseMethod() ast.Expression {
+	exp := &ast.Method{Token: p.curToken, Name: p.curToken.Value}
+
+	p.nextToken()
 	p.nextToken()
 	exp.Arguments = p.parseFunctionParameters()
 

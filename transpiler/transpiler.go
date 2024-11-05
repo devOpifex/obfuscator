@@ -9,9 +9,10 @@ import (
 )
 
 type Transpiler struct {
-	code  []string
-	env   *environment.Environment
-	stack obfuscator.Stack
+	code        []string
+	env         *environment.Environment
+	callStack   obfuscator.Stack
+	methodStack obfuscator.Stack
 }
 
 func New(env *environment.Environment) *Transpiler {
@@ -49,6 +50,9 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			t.Transpile(s)
 			t.addCode(";")
 		}
+
+	case *ast.Method:
+		t.obfuscateMethod(node)
 
 	case *ast.Identifier:
 		v, ok := t.env.GetVariable(node.Value, true)
@@ -204,8 +208,8 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 	return node
 }
 
-func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
-	t.stack = t.stack.Push(node.Name)
+func (t *Transpiler) obfuscateMethod(node *ast.Method) {
+	t.methodStack = t.methodStack.Push(node.Name, false)
 	name := node.Name
 	fn, ok := t.env.GetFunction(name, true)
 
@@ -221,7 +225,27 @@ func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 		}
 	}
 	t.addCode(")")
-	t.stack = t.stack.Pop()
+	t.methodStack = t.methodStack.Pop()
+}
+
+func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
+	t.callStack = t.callStack.Push(node.Name, true)
+	name := node.Name
+	fn, ok := t.env.GetFunction(name, true)
+
+	if ok {
+		name = fn.Obfuscated
+	}
+
+	t.addCode(name + "(")
+	for i, a := range node.Arguments {
+		t.Transpile(a)
+		if i < len(node.Arguments)-1 {
+			t.addCode(",")
+		}
+	}
+	t.addCode(")")
+	t.callStack = t.callStack.Pop()
 }
 
 func (t *Transpiler) GetCode() string {

@@ -134,6 +134,7 @@ const (
 	// func
 	ItemFunction
 	ItemBackslash
+	ItemMethod
 
 	// types
 	ItemTypes

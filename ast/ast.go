@@ -442,3 +442,28 @@ func (ce *CallExpression) String() string {
 
 	return out.String()
 }
+
+type Method struct {
+	Token     token.Item // The '(' token
+	Name      string
+	Arguments []*ExpressionStatement
+}
+
+func (m *Method) Item() token.Item     { return m.Token }
+func (m *Method) expressionNode()      {}
+func (m *Method) TokenLiteral() string { return m.Token.Value }
+func (m *Method) String() string {
+	var out bytes.Buffer
+
+	args := []string{}
+	for _, a := range m.Arguments {
+		args = append(args, a.String())
+	}
+
+	out.WriteString(m.Name)
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ","))
+	out.WriteString(")")
+
+	return out.String()
+}
