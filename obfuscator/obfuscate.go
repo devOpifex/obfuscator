@@ -7,7 +7,7 @@ import (
 
 type Obfuscator struct {
 	env   *environment.Environment
-	stack stack
+	stack Stack
 }
 
 func New(env *environment.Environment) *Obfuscator {
@@ -111,9 +111,9 @@ func (o *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 }
 
 func (o *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
-	o.stack = o.stack.push(node.Name)
+	o.stack = o.stack.Push(node.Name)
 	for _, a := range node.Arguments {
 		o.Obfuscate(a)
 	}
-	o.stack = o.stack.pop()
+	o.stack = o.stack.Pop()
 }

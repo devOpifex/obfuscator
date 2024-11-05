@@ -13,6 +13,14 @@ type Function struct {
 	Obfuscated string
 }
 
+type Arg struct {
+	Token      token.Item
+	Value      *ast.Identifier
+	Name       string
+	Function   string
+	Obfuscated string
+}
+
 type Variable struct {
 	Token      token.Item
 	Name       string

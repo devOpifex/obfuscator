@@ -5,11 +5,13 @@ import (
 
 	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/environment"
+	"github.com/sparkle-tech/obfuscator/obfuscator"
 )
 
 type Transpiler struct {
-	code []string
-	env  *environment.Environment
+	code  []string
+	env   *environment.Environment
+	stack obfuscator.Stack
 }
 
 func New(env *environment.Environment) *Transpiler {
@@ -67,7 +69,11 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		return node
 
 	case *ast.Boolean:
-		t.addCode(strings.ToUpper(node.String()))
+		if node.Value {
+			t.addCode("T")
+		} else {
+			t.addCode("F")
+		}
 
 	case *ast.IntegerLiteral:
 		t.addCode(node.Value)
@@ -104,6 +110,19 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.env = environment.Open(t.env)
 
 	case *ast.InfixExpression:
+		switch l := node.Left.(type) {
+
+		case *ast.Identifier:
+			switch n := node.Right.(type) {
+
+			case *ast.FunctionLiteral:
+				t.env.SetFunction(l.Value, environment.Function{
+					Name:  l.Value,
+					Value: n,
+				})
+			}
+		}
+
 		if node.Operator == "in" {
 			t.addCode(" ")
 		}
@@ -186,6 +205,7 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
+	t.stack = t.stack.Push(node.Name)
 	name := node.Name
 	fn, ok := t.env.GetFunction(name, true)
 
@@ -201,6 +221,7 @@ func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 		}
 	}
 	t.addCode(")")
+	t.stack = t.stack.Pop()
 }
 
 func (t *Transpiler) GetCode() string {

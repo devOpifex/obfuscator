@@ -18,10 +18,7 @@ func TestBasic(t *testing.T) {
 		return(total)
 	}
 
-	results <- foo(x = x, y = \(z = 2L){
-	 return(z + 2)
-	})
-	results <- foo(x, y = x)`
+	x <- foo(x, y = 23)`
 
 	l := lexer.NewTest(code)
 

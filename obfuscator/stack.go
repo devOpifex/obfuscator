@@ -1,11 +1,18 @@
 package obfuscator
 
-type stack []string
+type Stack []string
 
-func (s stack) pop() stack {
+func (s Stack) Pop() Stack {
 	return s[:len(s)-1]
 }
 
-func (s stack) push(el string) stack {
+func (s Stack) Push(el string) Stack {
 	return append(s, el)
+}
+
+func (s Stack) Get() (bool, string) {
+	if len(s) == 0 {
+		return false, ""
+	}
+	return true, s[len(s)-1]
 }

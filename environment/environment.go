@@ -1,8 +1,9 @@
 package environment
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"fmt"
-	"math/rand"
 )
 
 type Environment struct {
@@ -46,7 +47,7 @@ func (e *Environment) SetVariable(name string, val Variable) Variable {
 		return val
 	}
 
-	val.Obfuscated = mask()
+	val.Obfuscated = mask(name)
 	e.variables[name] = val
 	return val
 }
@@ -65,18 +66,14 @@ func (e *Environment) SetFunction(name string, val Function) Function {
 		return val
 	}
 
-	val.Obfuscated = mask()
+	val.Obfuscated = mask(name)
 	e.functions[name] = val
 	return val
 }
 
-func mask() string {
-	var letterRunes = []rune("-!?_./|abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-	b := make([]rune, 22)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-
-	return fmt.Sprintf("`%s`", string(b))
+func mask(txt string) string {
+	hasher := sha1.New()
+	hasher.Write([]byte(txt))
+	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+	return fmt.Sprintf("`%v`", sha)
 }
