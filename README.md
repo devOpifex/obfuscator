@@ -14,6 +14,19 @@ __Flags__
 - `key`: unique key used to obfuscate code.
 - `header`: header text to insert at top of obfuscated file, generally license (optional).
 
+```
+$> obfuscator -h
+Usage of obfuscator:
+  -header string
+        Header to append to obfuscated code, e.g.: license
+  -in string
+        Directory of R files to obfuscate
+  -key string
+        Key to obfuscate
+  -out string
+        Output name of file to write obfuscated code
+```
+
 __Example usage__
 
 ```
