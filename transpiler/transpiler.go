@@ -114,19 +114,6 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.env = environment.Open(t.env)
 
 	case *ast.InfixExpression:
-		switch l := node.Left.(type) {
-
-		case *ast.Identifier:
-			switch n := node.Right.(type) {
-
-			case *ast.FunctionLiteral:
-				t.env.SetFunction(l.Value, environment.Function{
-					Name:  l.Value,
-					Value: n,
-				})
-			}
-		}
-
 		if node.Operator == "in" {
 			t.addCode(" ")
 		}
@@ -135,9 +122,29 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			node.Operator = "="
 		}
 
-		if node.Left != nil {
-			t.Transpile(node.Left)
+		switch node.Right.(type) {
+		case *ast.FunctionLiteral:
+			t.env.SetFunction(node.Left.Item().Value, environment.Function{
+				Name: node.Left.Item().Value,
+			})
 		}
+
+		switch l := node.Left.(type) {
+		case *ast.Identifier:
+			if node.Operator != "=" {
+				break
+			}
+
+			if t.inMethod() {
+				break
+			}
+
+			t.env.SetVariable(l.Value, environment.Variable{
+				Name: l.Value,
+			})
+		}
+
+		t.Transpile(node.Left)
 
 		t.addCode(node.Operator)
 
@@ -145,9 +152,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			t.addCode(" ")
 		}
 
-		if node.Right != nil {
-			t.Transpile(node.Right)
-		}
+		t.Transpile(node.Right)
 
 	case *ast.Square:
 		t.addCode(node.Token.Value)
@@ -254,4 +259,8 @@ func (t *Transpiler) GetCode() string {
 
 func (t *Transpiler) addCode(code string) {
 	t.code = append(t.code, code)
+}
+
+func (t *Transpiler) inMethod() bool {
+	return len(t.methodStack) > 0
 }

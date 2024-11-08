@@ -64,9 +64,9 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 					Value: n,
 				})
 			default:
-				ok, _ := o.callStack.Get()
+				ok, c := o.callStack.Get()
 
-				if ok {
+				if ok && c.name != "" {
 					break
 				}
 
