@@ -185,6 +185,10 @@ func lexDefault(l *Lexer) stateFn {
 		return l.lexString('"')
 	}
 
+	if r1 == '`' {
+		return lexBacktick
+	}
+
 	if r1 == '\'' {
 		l.next()
 		l.emit(token.ItemSingleQuote)
@@ -250,6 +254,12 @@ func lexDefault(l *Lexer) stateFn {
 		l.next()
 		l.next()
 		l.emit(token.ItemThreeDot)
+		return lexDefault
+	}
+
+	if r1 == '.' {
+		l.next()
+		l.emit(token.ItemDot)
 		return lexDefault
 	}
 
@@ -558,6 +568,26 @@ func (l *Lexer) lexString(closing rune) func(l *Lexer) stateFn {
 
 		return lexDefault
 	}
+}
+
+func lexBacktick(l *Lexer) stateFn {
+	l.next()
+	r := l.peek(1)
+	for r != '`' && r != token.EOF {
+		l.next()
+		r = l.peek(1)
+	}
+
+	if r == token.EOF {
+		l.next()
+		return l.errorf("expecting closing `, got %v", l.token())
+	}
+
+	l.next()
+
+	l.emit(token.ItemIdent)
+
+	return lexDefault
 }
 
 func lexInfix(l *Lexer) stateFn {

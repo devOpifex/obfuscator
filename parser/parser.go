@@ -78,6 +78,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemDoubleQuote, p.parseStringLiteral)
 	p.registerPrefix(token.ItemSingleQuote, p.parseStringLiteral)
 	p.registerPrefix(token.ItemNA, p.parseNA)
+	p.registerPrefix(token.ItemDot, p.parseDot)
 	p.registerPrefix(token.ItemNan, p.parseNan)
 	p.registerPrefix(token.ItemNAComplex, p.parseNaComplex)
 	p.registerPrefix(token.ItemNAReal, p.parseNaReal)
@@ -309,6 +310,13 @@ func (p *Parser) parseNull() ast.Expression {
 
 func (p *Parser) parseElipsis() ast.Expression {
 	return &ast.Keyword{Token: p.curToken, Value: "..."}
+}
+
+func (p *Parser) parseDot() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: ".",
+	}
 }
 
 func (p *Parser) parseNA() ast.Expression {

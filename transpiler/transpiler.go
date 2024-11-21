@@ -6,6 +6,7 @@ import (
 	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/environment"
 	"github.com/sparkle-tech/obfuscator/obfuscator"
+	"github.com/sparkle-tech/obfuscator/token"
 )
 
 type Transpiler struct {
@@ -206,6 +207,9 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 	var node ast.Node
 
 	for _, statement := range program.Statements {
+		if statement.Item().Class == token.ItemComment {
+			continue
+		}
 		t.Transpile(statement)
 		t.addCode(";")
 	}

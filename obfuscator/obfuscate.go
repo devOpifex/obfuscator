@@ -55,6 +55,10 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 		o.Obfuscate(node.Left)
 		o.Obfuscate(node.Right)
 
+		if node.Operator == "::" || node.Operator == ":::" {
+			return node
+		}
+
 		switch l := node.Left.(type) {
 		case *ast.Identifier:
 			switch n := node.Right.(type) {

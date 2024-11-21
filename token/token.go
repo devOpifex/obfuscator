@@ -38,6 +38,9 @@ const (
 	// comma,
 	ItemComma
 
+	// dot .
+	ItemDot
+
 	// question mark?
 	ItemQuestion
 
