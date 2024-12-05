@@ -43,9 +43,9 @@ func main() {
 
 	l := lexer.New(obfs.files)
 	l.Run()
-	p := parser.New(l)
 
-	programs := p.Run()
+	p := parser.New(l)
+	p.Run()
 
 	environment.SetKey(*c.Key)
 	env := environment.New()

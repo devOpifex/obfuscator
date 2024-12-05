@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/diagnostics"
 	"github.com/sparkle-tech/obfuscator/token"
 )
@@ -13,6 +14,7 @@ type File struct {
 	Path    string
 	Content []byte
 	Items   token.Items
+	Ast     *ast.Program
 }
 
 type Files []File
@@ -43,7 +45,13 @@ func New(fl Files) *Lexer {
 func NewCode(fl, code string) *Lexer {
 	return New(
 		Files{
-			{Path: fl, Content: []byte(code)},
+			{
+				Path:    fl,
+				Content: []byte(code),
+				Ast: &ast.Program{
+					Statements: []ast.Statement{},
+				},
+			},
 		},
 	)
 }
@@ -51,7 +59,13 @@ func NewCode(fl, code string) *Lexer {
 func NewTest(code string) *Lexer {
 	return New(
 		Files{
-			{Path: "test.vp", Content: []byte(code)},
+			{
+				Path:    "test.vp",
+				Content: []byte(code),
+				Ast: &ast.Program{
+					Statements: []ast.Statement{},
+				},
+			},
 		},
 	)
 }

@@ -112,13 +112,33 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.ItemNamespaceInternal, p.parseInfixExpression)
 	p.registerInfix(token.ItemLeftSquare, p.parseInfixExpression)
 	p.registerInfix(token.ItemDoubleLeftSquare, p.parseInfixExpression)
-
 	p.registerInfix(token.ItemLeftParen, p.parseCallExpression)
 
-	p.nextToken()
-	p.nextToken()
-
 	return p
+}
+
+func (p *Parser) Run() {
+	for i := range p.l.Files {
+		p.filePos = i
+		p.pos = 0
+
+		p.nextToken()
+		p.nextToken()
+
+		for !p.curTokenIs(token.ItemEOF) && !p.curTokenIs(token.ItemError) {
+			stmt := p.parseStatement()
+			if stmt != nil {
+				p.l.Files[i].Ast.Statements = append(p.l.Files[i].Ast.Statements, stmt)
+			}
+			p.nextToken()
+		}
+	}
+}
+
+func (p *Parser) Print() {
+	for i := range p.l.Files {
+		fmt.Println(p.l.Files[i].Ast.String())
+	}
 }
 
 func (p *Parser) nextToken() {
@@ -130,7 +150,7 @@ func (p *Parser) nextToken() {
 	p.pos++
 }
 
-func (p *Parser) print() {
+func (p *Parser) debug() {
 	fmt.Println("++++++++++++++++++++ Current ++++++++++++++++++++")
 	fmt.Printf("line: %v - character: %v | ", p.curToken.Line+1, p.curToken.Char+1)
 	p.curToken.Print()
@@ -201,28 +221,6 @@ func (p *Parser) noPrefixParseFnError(t token.ItemType) {
 		p.errors,
 		diagnostics.NewError(p.curToken, msg),
 	)
-}
-
-func (p *Parser) Run() []*ast.Program {
-	var programs []*ast.Program
-
-	for i := range p.l.Files {
-		p.filePos = i
-		program := &ast.Program{}
-		program.Statements = []ast.Statement{}
-
-		for !p.curTokenIs(token.ItemEOF) && !p.curTokenIs(token.ItemError) {
-			stmt := p.parseStatement()
-			if stmt != nil {
-				program.Statements = append(program.Statements, stmt)
-			}
-			p.nextToken()
-		}
-
-		programs = append(programs, program)
-	}
-
-	return programs
 }
 
 func (p *Parser) parseStatement() ast.Statement {

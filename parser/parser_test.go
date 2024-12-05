@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/sparkle-tech/obfuscator/lexer"
@@ -25,7 +24,7 @@ func TestBasic(t *testing.T) {
 	l.Run()
 	p := New(l)
 
-	progs := p.Run()
+	p.Run()
 
-	fmt.Println(progs[0].String())
+	p.Print()
 }
