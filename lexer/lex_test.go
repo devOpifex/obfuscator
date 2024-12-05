@@ -14,7 +14,7 @@ func TestDeclare(t *testing.T) {
 
 	l.Run()
 
-	if len(l.Items) == 0 {
+	if len(l.Files[0].Items) == 0 {
 		t.Fatal("No Items where lexed")
 	}
 
@@ -26,7 +26,7 @@ func TestDeclare(t *testing.T) {
 		}
 
 	for i, token := range tokens {
-		actual := l.Items[i].Class
+		actual := l.Files[0].Items[i].Class
 		if actual != token {
 			t.Fatalf(
 				"token %v expected `%v`, got `%v`",
@@ -50,7 +50,7 @@ foo(1, 2)
 
 	l.Run()
 
-	if len(l.Items) == 0 {
+	if len(l.Files[0].Items) == 0 {
 		t.Fatal("No Items where lexed")
 	}
 
@@ -80,7 +80,7 @@ foo(1, 2)
 		}
 
 	for i, token := range tokens {
-		actual := l.Items[i].Class
+		actual := l.Files[0].Items[i].Class
 		if actual != token {
 			t.Fatalf(
 				"token %v expected `%v`, got `%v`",
@@ -172,7 +172,7 @@ x <- c(1, 2)
 
 	l.Run()
 
-	if len(l.Items) == 0 {
+	if len(l.Files[0].Items) == 0 {
 		t.Fatal("No Items where lexed")
 	}
 

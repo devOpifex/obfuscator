@@ -12,6 +12,7 @@ import (
 type File struct {
 	Path    string
 	Content []byte
+	Items   token.Items
 }
 
 type Files []File
@@ -25,7 +26,6 @@ type Lexer struct {
 	width   int
 	line    int // line number
 	char    int // character number in line
-	Items   token.Items
 	errors  diagnostics.Diagnostics
 }
 
@@ -83,7 +83,7 @@ func (l *Lexer) emit(t token.ItemType) {
 		return
 	}
 
-	l.Items = append(l.Items, token.Item{
+	l.Files[l.filePos].Items = append(l.Files[l.filePos].Items, token.Item{
 		Char:  l.char,
 		Line:  l.line,
 		Pos:   l.pos,
@@ -95,7 +95,7 @@ func (l *Lexer) emit(t token.ItemType) {
 }
 
 func (l *Lexer) emitEOF() {
-	l.Items = append(l.Items, token.Item{Class: token.ItemEOF, Value: "EOF"})
+	l.Files[l.filePos].Items = append(l.Files[l.filePos].Items, token.Item{Class: token.ItemEOF, Value: "EOF"})
 }
 
 // returns currently accepted token
