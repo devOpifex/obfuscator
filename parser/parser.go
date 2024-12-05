@@ -55,6 +55,8 @@ type Parser struct {
 	curToken  token.Item
 	peekToken token.Item
 
+	filePos int
+
 	prefixParseFns map[token.ItemType]prefixParseFn
 	infixParseFns  map[token.ItemType]infixParseFn
 }
@@ -121,10 +123,10 @@ func New(l *lexer.Lexer) *Parser {
 
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
-	if p.pos >= len(p.l.Items) {
+	if p.pos >= len(p.l.Files[p.filePos].Items) {
 		return
 	}
-	p.peekToken = p.l.Items[p.pos]
+	p.peekToken = p.l.Files[p.filePos].Items[p.pos]
 	p.pos++
 }
 
@@ -201,19 +203,26 @@ func (p *Parser) noPrefixParseFnError(t token.ItemType) {
 	)
 }
 
-func (p *Parser) Run() *ast.Program {
-	program := &ast.Program{}
-	program.Statements = []ast.Statement{}
+func (p *Parser) Run() []*ast.Program {
+	var programs []*ast.Program
 
-	for !p.curTokenIs(token.ItemEOF) && !p.curTokenIs(token.ItemError) {
-		stmt := p.parseStatement()
-		if stmt != nil {
-			program.Statements = append(program.Statements, stmt)
+	for i := range p.l.Files {
+		p.filePos = i
+		program := &ast.Program{}
+		program.Statements = []ast.Statement{}
+
+		for !p.curTokenIs(token.ItemEOF) && !p.curTokenIs(token.ItemError) {
+			stmt := p.parseStatement()
+			if stmt != nil {
+				program.Statements = append(program.Statements, stmt)
+			}
+			p.nextToken()
 		}
-		p.nextToken()
+
+		programs = append(programs, program)
 	}
 
-	return program
+	return programs
 }
 
 func (p *Parser) parseStatement() ast.Statement {

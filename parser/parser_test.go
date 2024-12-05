@@ -25,7 +25,7 @@ func TestBasic(t *testing.T) {
 	l.Run()
 	p := New(l)
 
-	prog := p.Run()
+	progs := p.Run()
 
-	fmt.Println(prog.String())
+	fmt.Println(progs[0].String())
 }

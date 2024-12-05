@@ -154,13 +154,13 @@ func (l *Lexer) Run() {
 
 		// remove the EOF
 		if i < len(l.Files)-1 {
-			l.Items = l.Items[:len(l.Items)-1]
+			l.Files[l.filePos].Items = l.Files[l.filePos].Items[:len(l.Files[l.filePos].Items)-1]
 		}
 	}
 
-	for i := range l.Items {
-		if l.Items[i].Class == token.ItemDollar && l.Items[i+2].Class == token.ItemLeftParen {
-			l.Items[i+1].Class = token.ItemMethod
+	for i := range l.Files[l.filePos].Items {
+		if l.Files[l.filePos].Items[i].Class == token.ItemDollar && l.Files[l.filePos].Items[i+2].Class == token.ItemLeftParen {
+			l.Files[l.filePos].Items[i+1].Class = token.ItemMethod
 		}
 	}
 }
