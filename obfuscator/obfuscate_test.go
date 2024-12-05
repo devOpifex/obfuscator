@@ -26,9 +26,9 @@ func TestBasic(t *testing.T) {
 	l.Run()
 	p := parser.New(l)
 
-	progs := p.Run()
+	p.Run()
 
 	env := environment.New()
-	o := New(env)
-	o.run(progs)
+	o := New(env, p.Files())
+	o.RunTwice()
 }

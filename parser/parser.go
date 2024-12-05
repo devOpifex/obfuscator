@@ -135,6 +135,10 @@ func (p *Parser) Run() {
 	}
 }
 
+func (p *Parser) Files() lexer.Files {
+	return p.l.Files
+}
+
 func (p *Parser) Print() {
 	for i := range p.l.Files {
 		fmt.Println(p.l.Files[i].Ast.String())

@@ -49,8 +49,8 @@ func main() {
 
 	environment.SetKey(*c.Key)
 	env := environment.New()
-	o := obfuscator.New(env)
-	o.RunTwice(programs)
+	o := obfuscator.New(env, p.Files())
+	o.RunTwice()
 
 	t := transpiler.New(env)
 	t.Transpile(prog)

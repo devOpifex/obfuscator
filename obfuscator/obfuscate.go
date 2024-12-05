@@ -3,28 +3,31 @@ package obfuscator
 import (
 	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/environment"
+	"github.com/sparkle-tech/obfuscator/lexer"
 )
 
 type Obfuscator struct {
 	env       *environment.Environment
 	callStack Stack
+	files     lexer.Files
 }
 
-func New(env *environment.Environment) *Obfuscator {
+func New(env *environment.Environment, files lexer.Files) *Obfuscator {
 	return &Obfuscator{
-		env: env,
+		env:   env,
+		files: files,
 	}
 }
 
-func (o *Obfuscator) run(progs []*ast.Program) {
-	for _, p := range progs {
-		o.Obfuscate(p)
+func (o *Obfuscator) run() {
+	for _, p := range o.files {
+		o.Obfuscate(p.Ast)
 	}
 }
 
-func (o *Obfuscator) RunTwice(progs []*ast.Program) {
-	o.run(progs)
-	o.run(progs)
+func (o *Obfuscator) RunTwice() {
+	o.run()
+	o.run()
 }
 
 func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
