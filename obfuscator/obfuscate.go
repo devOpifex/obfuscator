@@ -16,6 +16,17 @@ func New(env *environment.Environment) *Obfuscator {
 	}
 }
 
+func (o *Obfuscator) run(progs []*ast.Program) {
+	for _, p := range progs {
+		o.Obfuscate(p)
+	}
+}
+
+func (o *Obfuscator) RunTwice(progs []*ast.Program) {
+	o.run(progs)
+	o.run(progs)
+}
+
 func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 	switch node := node.(type) {
 

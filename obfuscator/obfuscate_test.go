@@ -26,9 +26,9 @@ func TestBasic(t *testing.T) {
 	l.Run()
 	p := parser.New(l)
 
-	prog := p.Run()
+	progs := p.Run()
 
 	env := environment.New()
 	o := New(env)
-	o.Obfuscate(prog)
+	o.run(progs)
 }

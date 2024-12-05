@@ -45,13 +45,12 @@ func main() {
 	l.Run()
 	p := parser.New(l)
 
-	prog := p.Run()
+	programs := p.Run()
 
 	environment.SetKey(*c.Key)
 	env := environment.New()
 	o := obfuscator.New(env)
-	o.Obfuscate(prog)
-	o.Obfuscate(prog)
+	o.RunTwice(programs)
 
 	t := transpiler.New(env)
 	t.Transpile(prog)
