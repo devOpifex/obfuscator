@@ -54,9 +54,9 @@ func main() {
 
 	t := transpiler.New(env, o.Files())
 	t.Run()
-	err = writeString(*c.Out, t.GetCode(), header)
+	//err = writeString(*c.Out, t.GetCode(), header)
 
-	if err != nil {
-		log.Fatal("Failed to write obfuscated code")
-	}
+	//if err != nil {
+	//	log.Fatal("Failed to write obfuscated code")
+	//}
 }
