@@ -30,6 +30,10 @@ func (o *Obfuscator) RunTwice() {
 	o.run()
 }
 
+func (o *Obfuscator) Files() lexer.Files {
+	return o.files
+}
+
 func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 	switch node := node.(type) {
 

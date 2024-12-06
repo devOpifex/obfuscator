@@ -5,6 +5,7 @@ import (
 
 	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/environment"
+	"github.com/sparkle-tech/obfuscator/lexer"
 	"github.com/sparkle-tech/obfuscator/obfuscator"
 	"github.com/sparkle-tech/obfuscator/token"
 )
@@ -14,11 +15,27 @@ type Transpiler struct {
 	env         *environment.Environment
 	callStack   obfuscator.Stack
 	methodStack obfuscator.Stack
+	file        lexer.File
 }
 
-func New(env *environment.Environment) *Transpiler {
-	return &Transpiler{
-		env: env,
+type Transpilers []*Transpiler
+
+func New(env *environment.Environment, files lexer.Files) Transpilers {
+	var ts Transpilers
+
+	for _, f := range files {
+		ts = append(ts, &Transpiler{
+			env:  env,
+			file: f,
+		})
+	}
+
+	return ts
+}
+
+func (ts Transpilers) Run() {
+	for _, t := range ts {
+		t.Transpile(t.file.Ast)
 	}
 }
 

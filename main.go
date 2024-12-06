@@ -52,8 +52,8 @@ func main() {
 	o := obfuscator.New(env, p.Files())
 	o.RunTwice()
 
-	t := transpiler.New(env)
-	t.Transpile(prog)
+	t := transpiler.New(env, o.Files())
+	t.Run()
 	err = writeString(*c.Out, t.GetCode(), header)
 
 	if err != nil {
