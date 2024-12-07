@@ -54,6 +54,7 @@ func main() {
 
 	t := transpiler.New(env, o.Files())
 	t.Run()
+	t.Write(*c.Out, header)
 	//err = writeString(*c.Out, t.GetCode(), header)
 
 	//if err != nil {

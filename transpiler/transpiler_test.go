@@ -1,7 +1,6 @@
 package transpiler
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/sparkle-tech/obfuscator/environment"
@@ -33,8 +32,5 @@ func TestBasic(t *testing.T) {
 
 	trans := New(env, o.Files())
 	trans.Run()
-	for _, t := range trans {
-		fmt.Println(t.file.Path)
-		fmt.Println(t.GetCode())
-	}
+	trans.Write("newPath")
 }
