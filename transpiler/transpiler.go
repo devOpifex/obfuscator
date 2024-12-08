@@ -172,8 +172,9 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 		t.Transpile(node.Right)
 
-	case *ast.Square:
-		t.addCode(node.Token.Value)
+		if node.Operator == "[" {
+			t.addCode("]")
+		}
 
 	case *ast.IfExpression:
 		t.addCode("if(")

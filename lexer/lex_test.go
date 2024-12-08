@@ -93,7 +93,12 @@ foo(1, 2)
 }
 
 func TestReal(t *testing.T) {
-	code := "`%||%` <- function(x, y) {if (is.null(x)) y else x}"
+	code := `
+box::use(
+  ambiorix[Ambiorix],
+  ./here[get_home],
+)
+x <- y[1]`
 
 	l := NewTest(code)
 
