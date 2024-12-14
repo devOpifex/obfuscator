@@ -271,19 +271,8 @@ func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 	}
 
 	t.addCode(name + "(")
-	for i, a := range node.Arguments {
+	for _, a := range node.Arguments {
 		t.Transpile(a.Expression)
-		switch a.Expression.(type) {
-		case *ast.Square:
-			continue
-		case *ast.SquareRightLiteral:
-			continue
-		default:
-			if i < len(node.Arguments)-1 {
-				t.addCode(",")
-			}
-		}
-
 	}
 	t.addCode(")")
 	t.callStack = t.callStack.Pop()

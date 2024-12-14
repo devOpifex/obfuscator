@@ -28,6 +28,7 @@ var precedences = map[token.ItemType]int{
 	token.ItemLessThan:          LESSGREATER,
 	token.ItemGreaterThan:       LESSGREATER,
 	token.ItemPlus:              SUM,
+	token.ItemComma:             SUM,
 	token.ItemMinus:             SUM,
 	token.ItemDivide:            PRODUCT,
 	token.ItemMultiply:          PRODUCT,
@@ -97,6 +98,7 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
 	p.registerInfix(token.ItemPlus, p.parseInfixExpression)
+	p.registerInfix(token.ItemComma, p.parseInfixExpression)
 	p.registerInfix(token.ItemMinus, p.parseInfixExpression)
 	p.registerInfix(token.ItemDivide, p.parseInfixExpression)
 	p.registerInfix(token.ItemMultiply, p.parseInfixExpression)

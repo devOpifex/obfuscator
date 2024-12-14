@@ -93,7 +93,13 @@ foo(1, 2)
 }
 
 func TestReal(t *testing.T) {
-	code := "`xxx` <- \\(x) x + 1"
+	code := `box::use(
+    ambiorix[Ambiorix],
+    . / controllers[
+      xsasd,
+      yyy
+    ]
+  )`
 
 	l := NewTest(code)
 

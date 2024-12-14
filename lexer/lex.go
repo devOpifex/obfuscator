@@ -171,7 +171,7 @@ func (l *Lexer) Run() {
 			l.Files[l.filePos].Items = l.Files[l.filePos].Items[:len(l.Files[l.filePos].Items)-1]
 		}
 
-		if l.Files[l.filePos].Items[len(l.Files[l.filePos].Items)-1].Class != token.ItemEOF {
+		if len(l.Files[l.filePos].Items) > 0 && l.Files[l.filePos].Items[len(l.Files[l.filePos].Items)-1].Class != token.ItemEOF {
 			l.emitEOF()
 		}
 	}
