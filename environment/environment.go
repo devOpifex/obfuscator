@@ -83,6 +83,6 @@ func mask(txt string) string {
 	hasher := sha1.New()
 	hasher.Write([]byte(txt + KEY))
 	sha := hex.EncodeToString(hasher.Sum(nil))
-  hash := base64.StdEncoding.EncodeToString([]byte(sha))
-	return fmt.Sprintf("`%v`", strings.TrimRight(hash, "=="))
+	hash := base64.StdEncoding.EncodeToString([]byte(sha))
+	return fmt.Sprintf(".%v", strings.TrimRight(hash, "=="))
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/diagnostics"
 	"github.com/sparkle-tech/obfuscator/token"
 )
@@ -12,6 +13,8 @@ import (
 type File struct {
 	Path    string
 	Content []byte
+	Items   token.Items
+	Ast     *ast.Program
 }
 
 type Files []File
@@ -25,7 +28,6 @@ type Lexer struct {
 	width   int
 	line    int // line number
 	char    int // character number in line
-	Items   token.Items
 	errors  diagnostics.Diagnostics
 }
 
@@ -43,7 +45,13 @@ func New(fl Files) *Lexer {
 func NewCode(fl, code string) *Lexer {
 	return New(
 		Files{
-			{Path: fl, Content: []byte(code)},
+			{
+				Path:    fl,
+				Content: []byte(code),
+				Ast: &ast.Program{
+					Statements: []ast.Statement{},
+				},
+			},
 		},
 	)
 }
@@ -51,7 +59,13 @@ func NewCode(fl, code string) *Lexer {
 func NewTest(code string) *Lexer {
 	return New(
 		Files{
-			{Path: "test.vp", Content: []byte(code)},
+			{
+				Path:    "test.vp",
+				Content: []byte(code),
+				Ast: &ast.Program{
+					Statements: []ast.Statement{},
+				},
+			},
 		},
 	)
 }
@@ -83,7 +97,7 @@ func (l *Lexer) emit(t token.ItemType) {
 		return
 	}
 
-	l.Items = append(l.Items, token.Item{
+	l.Files[l.filePos].Items = append(l.Files[l.filePos].Items, token.Item{
 		Char:  l.char,
 		Line:  l.line,
 		Pos:   l.pos,
@@ -95,7 +109,7 @@ func (l *Lexer) emit(t token.ItemType) {
 }
 
 func (l *Lexer) emitEOF() {
-	l.Items = append(l.Items, token.Item{Class: token.ItemEOF, Value: "EOF"})
+	l.Files[l.filePos].Items = append(l.Files[l.filePos].Items, token.Item{Class: token.ItemEOF, Value: "EOF"})
 }
 
 // returns currently accepted token
@@ -154,13 +168,17 @@ func (l *Lexer) Run() {
 
 		// remove the EOF
 		if i < len(l.Files)-1 {
-			l.Items = l.Items[:len(l.Items)-1]
+			l.Files[l.filePos].Items = l.Files[l.filePos].Items[:len(l.Files[l.filePos].Items)-1]
+		}
+
+		if len(l.Files[l.filePos].Items) > 0 && l.Files[l.filePos].Items[len(l.Files[l.filePos].Items)-1].Class != token.ItemEOF {
+			l.emitEOF()
 		}
 	}
 
-	for i := range l.Items {
-		if l.Items[i].Class == token.ItemDollar && l.Items[i+2].Class == token.ItemLeftParen {
-			l.Items[i+1].Class = token.ItemMethod
+	for i := range l.Files[l.filePos].Items {
+		if l.Files[l.filePos].Items[i].Class == token.ItemDollar && l.Files[l.filePos].Items[i+2].Class == token.ItemLeftParen {
+			l.Files[l.filePos].Items[i+1].Class = token.ItemMethod
 		}
 	}
 }
@@ -186,7 +204,7 @@ func lexDefault(l *Lexer) stateFn {
 	}
 
 	if r1 == '`' {
-		return lexBacktick
+		return lexBacktick(l)
 	}
 
 	if r1 == '\'' {
@@ -443,12 +461,6 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
-	if r1 == '`' {
-		l.next()
-		l.emit(token.ItemBacktick)
-		return lexDefault
-	}
-
 	if l.acceptNumber() {
 		return lexNumber
 	}
@@ -531,6 +543,23 @@ func lexComment(l *Lexer) stateFn {
 	return lexDefault
 }
 
+func lexBacktick(l *Lexer) func(l *Lexer) stateFn {
+	l.next()
+	r := l.peek(1)
+	for r != '`' && r != token.EOF {
+		r = l.next()
+	}
+
+	if r == token.EOF {
+		l.next()
+		return l.errorf("expecting closing backtick, got %v", l.token())
+	}
+
+	l.emit(token.ItemIdent)
+
+	return lexDefault
+}
+
 func (l *Lexer) lexString(closing rune) func(l *Lexer) stateFn {
 	return func(l *Lexer) stateFn {
 		var c rune
@@ -568,26 +597,6 @@ func (l *Lexer) lexString(closing rune) func(l *Lexer) stateFn {
 
 		return lexDefault
 	}
-}
-
-func lexBacktick(l *Lexer) stateFn {
-	l.next()
-	r := l.peek(1)
-	for r != '`' && r != token.EOF {
-		l.next()
-		r = l.peek(1)
-	}
-
-	if r == token.EOF {
-		l.next()
-		return l.errorf("expecting closing `, got %v", l.token())
-	}
-
-	l.next()
-
-	l.emit(token.ItemIdent)
-
-	return lexDefault
 }
 
 func lexInfix(l *Lexer) stateFn {

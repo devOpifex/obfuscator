@@ -28,6 +28,7 @@ var precedences = map[token.ItemType]int{
 	token.ItemLessThan:          LESSGREATER,
 	token.ItemGreaterThan:       LESSGREATER,
 	token.ItemPlus:              SUM,
+	token.ItemComma:             SUM,
 	token.ItemMinus:             SUM,
 	token.ItemDivide:            PRODUCT,
 	token.ItemMultiply:          PRODUCT,
@@ -54,6 +55,8 @@ type Parser struct {
 
 	curToken  token.Item
 	peekToken token.Item
+
+	filePos int
 
 	prefixParseFns map[token.ItemType]prefixParseFn
 	infixParseFns  map[token.ItemType]infixParseFn
@@ -95,6 +98,7 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
 	p.registerInfix(token.ItemPlus, p.parseInfixExpression)
+	p.registerInfix(token.ItemComma, p.parseInfixExpression)
 	p.registerInfix(token.ItemMinus, p.parseInfixExpression)
 	p.registerInfix(token.ItemDivide, p.parseInfixExpression)
 	p.registerInfix(token.ItemMultiply, p.parseInfixExpression)
@@ -110,25 +114,49 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.ItemNamespaceInternal, p.parseInfixExpression)
 	p.registerInfix(token.ItemLeftSquare, p.parseInfixExpression)
 	p.registerInfix(token.ItemDoubleLeftSquare, p.parseInfixExpression)
-
 	p.registerInfix(token.ItemLeftParen, p.parseCallExpression)
-
-	p.nextToken()
-	p.nextToken()
 
 	return p
 }
 
+func (p *Parser) Run() {
+	for i := range p.l.Files {
+		p.filePos = i
+		p.pos = 0
+
+		p.nextToken()
+		p.nextToken()
+
+		for !p.curTokenIs(token.ItemEOF) && !p.curTokenIs(token.ItemError) {
+			stmt := p.parseStatement()
+			if stmt != nil {
+				p.l.Files[i].Ast.Statements = append(p.l.Files[i].Ast.Statements, stmt)
+			}
+			p.nextToken()
+		}
+	}
+}
+
+func (p *Parser) Files() lexer.Files {
+	return p.l.Files
+}
+
+func (p *Parser) Print() {
+	for i := range p.l.Files {
+		fmt.Println(p.l.Files[i].Ast.String())
+	}
+}
+
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
-	if p.pos >= len(p.l.Items) {
+	if p.pos >= len(p.l.Files[p.filePos].Items) {
 		return
 	}
-	p.peekToken = p.l.Items[p.pos]
+	p.peekToken = p.l.Files[p.filePos].Items[p.pos]
 	p.pos++
 }
 
-func (p *Parser) print() {
+func (p *Parser) debug() {
 	fmt.Println("++++++++++++++++++++ Current ++++++++++++++++++++")
 	fmt.Printf("line: %v - character: %v | ", p.curToken.Line+1, p.curToken.Char+1)
 	p.curToken.Print()
@@ -199,21 +227,6 @@ func (p *Parser) noPrefixParseFnError(t token.ItemType) {
 		p.errors,
 		diagnostics.NewError(p.curToken, msg),
 	)
-}
-
-func (p *Parser) Run() *ast.Program {
-	program := &ast.Program{}
-	program.Statements = []ast.Statement{}
-
-	for !p.curTokenIs(token.ItemEOF) && !p.curTokenIs(token.ItemError) {
-		stmt := p.parseStatement()
-		if stmt != nil {
-			program.Statements = append(program.Statements, stmt)
-		}
-		p.nextToken()
-	}
-
-	return program
 }
 
 func (p *Parser) parseStatement() ast.Statement {

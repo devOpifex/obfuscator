@@ -14,7 +14,7 @@ func TestDeclare(t *testing.T) {
 
 	l.Run()
 
-	if len(l.Items) == 0 {
+	if len(l.Files[0].Items) == 0 {
 		t.Fatal("No Items where lexed")
 	}
 
@@ -26,7 +26,7 @@ func TestDeclare(t *testing.T) {
 		}
 
 	for i, token := range tokens {
-		actual := l.Items[i].Class
+		actual := l.Files[0].Items[i].Class
 		if actual != token {
 			t.Fatalf(
 				"token %v expected `%v`, got `%v`",
@@ -50,7 +50,7 @@ foo(1, 2)
 
 	l.Run()
 
-	if len(l.Items) == 0 {
+	if len(l.Files[0].Items) == 0 {
 		t.Fatal("No Items where lexed")
 	}
 
@@ -80,7 +80,7 @@ foo(1, 2)
 		}
 
 	for i, token := range tokens {
-		actual := l.Items[i].Class
+		actual := l.Files[0].Items[i].Class
 		if actual != token {
 			t.Fatalf(
 				"token %v expected `%v`, got `%v`",
@@ -93,86 +93,19 @@ foo(1, 2)
 }
 
 func TestReal(t *testing.T) {
-	code := `foo <- function(x, y = 2) {
-  x + y
-}
-
-z <- foo(1, 2)
-
-emit <- function(x, type) {
-  UseMethod("emit")
-}
-
-#' @export
-emit.lexer <- function(x, type) {
-  if(!type %in% TYPES) {
-    stop(sprintf("UNKNOWN type: %s", type))
-  }
-
-  x$tokens <- append(
-    x$tokens,
-    list(
-      list(
-        item = x$item,
-        type = type
-      )
-    )
-  )
-
-  x$item <- ""
-
-  invisible(x)
-}
-
-code <- function(x) {
-  UseMethod("code")
-}
-
-#' @export
-code.obfuscator <- function(x) {
-  code <- ""
-
-  has_code <- FALSE
-  for(index in seq_along(x$tokens)) {
-    token <- x$tokens[[index]]
-
-    if(index > 1 && token$type == NEWLINE_T && x$tokens[[index - 1]]$type == NEWLINE_T) {
-      next
-    }
-
-    # skip empty lines on top of script
-    if(token$type == NEWLINE_T && !has_code){
-      next
-    }
-
-    if(token$type == COMMENT_T){
-      next
-    }
-
-    val <- token$item
-
-    if(length(token$obfuscated)){
-      val <- token$obfuscated
-    }
-
-    has_code <- TRUE
-    code <- paste0(
-      code,
-      val
-    )
-  }
-
-  invisible(code)
-}
-
-x <- c(1, 2)
-`
+	code := `box::use(
+    ambiorix[Ambiorix],
+    . / controllers[
+      xsasd,
+      yyy
+    ]
+  )`
 
 	l := NewTest(code)
 
 	l.Run()
 
-	if len(l.Items) == 0 {
+	if len(l.Files[0].Items) == 0 {
 		t.Fatal("No Items where lexed")
 	}
 

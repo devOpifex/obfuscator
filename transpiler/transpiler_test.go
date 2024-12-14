@@ -1,7 +1,6 @@
 package transpiler
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/sparkle-tech/obfuscator/environment"
@@ -25,14 +24,13 @@ func TestBasic(t *testing.T) {
 	l.Run()
 	p := parser.New(l)
 
-	prog := p.Run()
+	p.Run()
 
 	env := environment.New()
-	o := obfuscator.New(env)
-	o.Obfuscate(prog)
-	o.Obfuscate(prog)
+	o := obfuscator.New(env, p.Files())
+	o.RunTwice()
 
-	trans := New(env)
-	trans.Transpile(prog)
-	fmt.Println(trans.GetCode())
+	trans := New(env, o.Files())
+	trans.Run()
+	trans.Write("newPath")
 }

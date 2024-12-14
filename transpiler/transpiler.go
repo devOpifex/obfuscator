@@ -5,6 +5,7 @@ import (
 
 	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/environment"
+	"github.com/sparkle-tech/obfuscator/lexer"
 	"github.com/sparkle-tech/obfuscator/obfuscator"
 	"github.com/sparkle-tech/obfuscator/token"
 )
@@ -14,11 +15,27 @@ type Transpiler struct {
 	env         *environment.Environment
 	callStack   obfuscator.Stack
 	methodStack obfuscator.Stack
+	file        lexer.File
 }
 
-func New(env *environment.Environment) *Transpiler {
-	return &Transpiler{
-		env: env,
+type Transpilers []*Transpiler
+
+func New(env *environment.Environment, files lexer.Files) Transpilers {
+	var ts Transpilers
+
+	for _, f := range files {
+		ts = append(ts, &Transpiler{
+			env:  env,
+			file: f,
+		})
+	}
+
+	return ts
+}
+
+func (ts Transpilers) Run() {
+	for _, t := range ts {
+		t.Transpile(t.file.Ast)
 	}
 }
 
@@ -155,8 +172,9 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 		t.Transpile(node.Right)
 
-	case *ast.Square:
-		t.addCode(node.Token.Value)
+		if node.Operator == "[" {
+			t.addCode("]")
+		}
 
 	case *ast.IfExpression:
 		t.addCode("if(")
@@ -181,6 +199,12 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.addCode("\\(")
 
 		for i, p := range node.Parameters {
+			switch n := p.Expression.(type) {
+			case *ast.Identifier:
+				t.env.SetVariable(n.Value, environment.Variable{
+					Name: n.Value,
+				})
+			}
 			t.Transpile(p.Expression)
 
 			if i < len(node.Parameters)-1 {
@@ -247,11 +271,8 @@ func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 	}
 
 	t.addCode(name + "(")
-	for i, a := range node.Arguments {
-		t.Transpile(a)
-		if i < len(node.Arguments)-1 {
-			t.addCode(",")
-		}
+	for _, a := range node.Arguments {
+		t.Transpile(a.Expression)
 	}
 	t.addCode(")")
 	t.callStack = t.callStack.Pop()

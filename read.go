@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/lexer"
 )
 
@@ -46,6 +47,9 @@ func (o *obfs) walk(path string, directory fs.DirEntry, err error) error {
 	rfl := lexer.File{
 		Path:    path,
 		Content: fl,
+		Ast: &ast.Program{
+			Statements: []ast.Statement{},
+		},
 	}
 
 	o.files = append(o.files, rfl)

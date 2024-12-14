@@ -43,21 +43,21 @@ func main() {
 
 	l := lexer.New(obfs.files)
 	l.Run()
-	p := parser.New(l)
 
-	prog := p.Run()
+	p := parser.New(l)
+	p.Run()
 
 	environment.SetKey(*c.Key)
 	env := environment.New()
-	o := obfuscator.New(env)
-	o.Obfuscate(prog)
-	o.Obfuscate(prog)
+	o := obfuscator.New(env, p.Files())
+	o.RunTwice()
 
-	t := transpiler.New(env)
-	t.Transpile(prog)
-	err = writeString(*c.Out, t.GetCode(), header)
+	t := transpiler.New(env, o.Files())
+	t.Run()
+	t.Write(*c.Out, header)
+	//err = writeString(*c.Out, t.GetCode(), header)
 
-	if err != nil {
-		log.Fatal("Failed to write obfuscated code")
-	}
+	//if err != nil {
+	//	log.Fatal("Failed to write obfuscated code")
+	//}
 }

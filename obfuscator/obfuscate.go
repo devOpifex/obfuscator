@@ -3,17 +3,35 @@ package obfuscator
 import (
 	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/environment"
+	"github.com/sparkle-tech/obfuscator/lexer"
 )
 
 type Obfuscator struct {
 	env       *environment.Environment
 	callStack Stack
+	files     lexer.Files
 }
 
-func New(env *environment.Environment) *Obfuscator {
+func New(env *environment.Environment, files lexer.Files) *Obfuscator {
 	return &Obfuscator{
-		env: env,
+		env:   env,
+		files: files,
 	}
+}
+
+func (o *Obfuscator) run() {
+	for _, p := range o.files {
+		o.Obfuscate(p.Ast)
+	}
+}
+
+func (o *Obfuscator) RunTwice() {
+	o.run()
+	o.run()
+}
+
+func (o *Obfuscator) Files() lexer.Files {
+	return o.files
 }
 
 func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
@@ -100,7 +118,14 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 		o.env = environment.Enclose(o.env)
 
 		for _, p := range node.Parameters {
-			o.Obfuscate(p.Expression)
+			node := o.Obfuscate(p.Expression)
+
+			switch n := node.(type) {
+			case *ast.Identifier:
+				o.env.SetVariable(n.Value, environment.Variable{
+					Name: n.Value,
+				})
+			}
 		}
 
 		if node.Body != nil {
