@@ -118,7 +118,14 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 		o.env = environment.Enclose(o.env)
 
 		for _, p := range node.Parameters {
-			o.Obfuscate(p.Expression)
+			node := o.Obfuscate(p.Expression)
+
+			switch n := node.(type) {
+			case *ast.Identifier:
+				o.env.SetVariable(n.Value, environment.Variable{
+					Name: n.Value,
+				})
+			}
 		}
 
 		if node.Body != nil {

@@ -199,6 +199,12 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.addCode("\\(")
 
 		for i, p := range node.Parameters {
+			switch n := p.Expression.(type) {
+			case *ast.Identifier:
+				t.env.SetVariable(n.Value, environment.Variable{
+					Name: n.Value,
+				})
+			}
 			t.Transpile(p.Expression)
 
 			if i < len(node.Parameters)-1 {
