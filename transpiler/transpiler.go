@@ -60,8 +60,8 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 	case *ast.Keyword:
 		t.addCode(node.Value)
 
-	case *ast.CommentStatement:
-		t.addCode("")
+	case *ast.ExportStatement:
+		t.addCode("\n#' @export\n")
 
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
@@ -235,6 +235,9 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 			continue
 		}
 		t.Transpile(statement)
+		if statement.Item().Class == token.ItemExport {
+			continue
+		}
 		t.addCode(";")
 	}
 

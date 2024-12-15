@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -35,6 +36,8 @@ const stringNumber = "0123456789"
 const stringAlpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const stringAlphaNum = stringAlpha + stringNumber
 const stringMathOp = "+-*/^"
+
+var exported regexp.Regexp = *regexp.MustCompile("\\@export")
 
 func New(fl Files) *Lexer {
 	return &Lexer{
@@ -536,6 +539,11 @@ func lexComment(l *Lexer) stateFn {
 	for r != '\n' && r != token.EOF {
 		l.next()
 		r = l.peek(1)
+	}
+
+	if exported.Match([]byte(l.token())) {
+		l.emit(token.ItemExport)
+		return lexDefault
 	}
 
 	l.emit(token.ItemComment)
