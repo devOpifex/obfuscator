@@ -16,6 +16,7 @@ type Transpiler struct {
 	callStack   obfuscator.Stack
 	methodStack obfuscator.Stack
 	file        lexer.File
+	force       bool
 }
 
 type Transpilers []*Transpiler
@@ -153,10 +154,6 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 				break
 			}
 
-			if t.inMethod() {
-				break
-			}
-
 			t.env.SetVariable(l.Value, environment.Variable{
 				Name: l.Value,
 			})
@@ -174,6 +171,10 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 		if node.Operator == "[" {
 			t.addCode("]")
+		}
+
+		if node.Operator == "[[" {
+			t.addCode("]]")
 		}
 
 	case *ast.IfExpression:
@@ -287,8 +288,4 @@ func (t *Transpiler) GetCode() string {
 
 func (t *Transpiler) addCode(code string) {
 	t.code = append(t.code, code)
-}
-
-func (t *Transpiler) inMethod() bool {
-	return len(t.methodStack) > 0
 }
