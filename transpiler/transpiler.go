@@ -16,7 +16,6 @@ type Transpiler struct {
 	callStack   obfuscator.Stack
 	methodStack obfuscator.Stack
 	file        lexer.File
-	force       bool
 }
 
 type Transpilers []*Transpiler
