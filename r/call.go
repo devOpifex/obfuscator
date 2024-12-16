@@ -1,8 +1,10 @@
 package r
 
-import "os/exec"
+import (
+	"os/exec"
+)
 
-func Callr(cmd string) ([]byte, error) {
+func Call(cmd string) ([]byte, error) {
 	out, err := exec.Command(
 		"R",
 		"-s",
@@ -11,4 +13,16 @@ func Callr(cmd string) ([]byte, error) {
 	).Output()
 
 	return out, err
+}
+
+func IsPackage(pak string) bool {
+	output, err := Call(
+		"x <- requireNamespace('" + pak + "');cat(tolower(x));",
+	)
+
+	if err != nil {
+		return false
+	}
+
+	return string(output) == "true"
 }
