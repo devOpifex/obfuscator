@@ -29,6 +29,9 @@ const (
 	// $
 	ItemDollar
 
+	// @
+	ItemAt
+
 	// backtick
 	ItemBacktick
 

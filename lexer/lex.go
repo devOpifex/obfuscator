@@ -331,13 +331,13 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
-	if r1 == '<' && r2 == ' ' {
+	if r1 == '<' {
 		l.next()
 		l.emit(token.ItemLessThan)
 		return lexDefault
 	}
 
-	if r1 == '>' && r2 == ' ' {
+	if r1 == '>' {
 		l.next()
 		l.emit(token.ItemGreaterThan)
 		return lexDefault
@@ -395,6 +395,12 @@ func lexDefault(l *Lexer) stateFn {
 	if r1 == '$' {
 		l.next()
 		l.emit(token.ItemDollar)
+		return lexDefault
+	}
+
+	if r1 == '@' {
+		l.next()
+		l.emit(token.ItemAt)
 		return lexDefault
 	}
 
@@ -513,9 +519,11 @@ func lexNumber(l *Lexer) stateFn {
 
 	r1 := l.peek(1)
 
-	if r1 == 'e' {
+	if r1 == 'e' || r1 == 'E' {
 		l.next()
-		l.acceptRun(stringNumber)
+		if r2 := l.peek(1); r2 == '+' || r2 == '-' {
+			l.next()
+		}
 	}
 
 	if l.accept(".") {
@@ -688,6 +696,21 @@ func lexIdentifier(l *Lexer) stateFn {
 
 	if tk == "in" {
 		l.emit(token.ItemIn)
+		return lexDefault
+	}
+
+	if tk == "break" {
+		l.emit(token.ItemBreak)
+		return lexDefault
+	}
+
+	if tk == "next" {
+		l.emit(token.ItemNext)
+		return lexDefault
+	}
+
+	if tk == "repeat" {
+		l.emit(token.ItemRepeat)
 		return lexDefault
 	}
 

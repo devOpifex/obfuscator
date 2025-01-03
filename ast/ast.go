@@ -483,3 +483,20 @@ func (m *Method) String() string {
 
 	return out.String()
 }
+
+type NamedArgument struct {
+	Token token.Item
+	Name  string
+	Value Expression
+}
+
+func (na *NamedArgument) expressionNode()      {}
+func (na *NamedArgument) TokenLiteral() string { return na.Token.Value }
+func (na *NamedArgument) String() string {
+	var out bytes.Buffer
+	out.WriteString(na.Name)
+	out.WriteString("=")
+	out.WriteString(na.Value.String())
+	return out.String()
+}
+func (na *NamedArgument) Item() token.Item { return na.Token }

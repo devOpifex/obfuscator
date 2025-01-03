@@ -12,34 +12,53 @@ import (
 const (
 	_ int = iota
 	LOWEST
-	EQUALS      // ==
-	LESSGREATER // > or <
-	SUM         // +
-	PRODUCT     // *
-	PREFIX      // -X or !X
-	CALL        // call(X)
-	INDEX
+	ASSIGN      // <- -> =
+	EQUALS      // == !=
+	LESSGREATER // > < >= <=
+	SUM         // + -
+	PRODUCT     // * /
+	POWER       // ^
+	PREFIX      // -X !X
+	MEMBER      // $ @
+	NAMESPACE   // :: :::
+	INDEX       // [] [[]]
+	CALL        // f()
 )
 
 var precedences = map[token.ItemType]int{
-	token.ItemAssign:            EQUALS,
-	token.ItemDoubleEqual:       EQUALS,
-	token.ItemNotEqual:          EQUALS,
-	token.ItemLessThan:          LESSGREATER,
-	token.ItemGreaterThan:       LESSGREATER,
-	token.ItemPlus:              SUM,
-	token.ItemComma:             SUM,
-	token.ItemMinus:             SUM,
-	token.ItemDivide:            PRODUCT,
-	token.ItemMultiply:          PRODUCT,
-	token.ItemPipe:              PRODUCT,
-	token.ItemInfix:             PRODUCT,
-	token.ItemLeftParen:         CALL,
-	token.ItemDollar:            SUM,
-	token.ItemNamespace:         EQUALS,
-	token.ItemNamespaceInternal: EQUALS,
-	token.ItemLeftSquare:        EQUALS,
-	token.ItemDoubleLeftSquare:  EQUALS,
+	// Lowest precedence
+	token.ItemAssign: ASSIGN, // <- -> =
+
+	// Comparison operators
+	token.ItemDoubleEqual: EQUALS,      // ==
+	token.ItemNotEqual:    EQUALS,      // !=
+	token.ItemLessThan:    LESSGREATER, // <
+	token.ItemGreaterThan: LESSGREATER, // >
+
+	// Arithmetic
+	token.ItemPlus:     SUM,     // +
+	token.ItemMinus:    SUM,     // -
+	token.ItemDivide:   PRODUCT, // /
+	token.ItemMultiply: PRODUCT, // *
+	token.ItemPower:    POWER,   // ^
+	token.ItemColon:    SUM,     // : (sequence operator)
+
+	// Prefix operators
+	token.ItemBang: PREFIX, // !
+
+	// High precedence operators
+	token.ItemDollar:            MEMBER,    // $
+	token.ItemAt:                MEMBER,    // @
+	token.ItemNamespace:         NAMESPACE, // ::
+	token.ItemNamespaceInternal: NAMESPACE, // :::
+	token.ItemLeftSquare:        INDEX,     // [
+	token.ItemDoubleLeftSquare:  INDEX,     // [[
+	token.ItemLeftParen:         CALL,      // f()
+
+	// Special operators
+	token.ItemPipe:  SUM,     // |>
+	token.ItemInfix: PRODUCT, // %op%
+	token.ItemComma: LOWEST,  // , (lowest precedence for separators)
 }
 
 type (
@@ -601,25 +620,43 @@ func (p *Parser) parseFunctionParameters() []*ast.ExpressionStatement {
 	statements := []*ast.ExpressionStatement{}
 
 	if p.peekTokenIs(token.ItemRightParen) {
-		stmt := p.parseExpressionStatement()
-		statements = append(statements, stmt)
+
 		p.nextToken()
 		return statements
 	}
 
 	for !p.curTokenIs(token.ItemRightParen) && !p.curTokenIs(token.ItemEOF) {
-		stmt := p.parseExpressionStatement()
-		if stmt != nil {
+		// Handle named parameters (name = value)
+		if p.peekTokenIs(token.ItemAssign) || p.peekTokenIs(token.ItemAssign) {
+			name := p.curToken.Value
+			p.nextToken() // consume '=' or '<-'
+			p.nextToken() // move to value
+
+			value := p.parseExpression(LOWEST)
+			stmt := &ast.ExpressionStatement{
+				Token: p.curToken,
+				Expression: &ast.NamedArgument{
+					Name:  name,
+					Value: value,
+				},
+			}
 			statements = append(statements, stmt)
+		} else {
+			// Handle regular parameters
+			stmt := p.parseExpressionStatement()
+			if stmt != nil {
+				statements = append(statements, stmt)
+			}
 		}
 
 		if p.curTokenIs(token.ItemRightParen) {
 			break
 		}
 
+		// Handle comma separator
 		if p.peekTokenIs(token.ItemComma) {
-			p.nextToken()
-			p.nextToken()
+			p.nextToken() // consume comma
+			p.nextToken() // move to next parameter
 			continue
 		}
 

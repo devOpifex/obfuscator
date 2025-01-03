@@ -152,7 +152,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			node.Operator = "="
 		}
 
-		if t.box.active && node.Operator == "[" {
+		if t.box.active && node.Operator == "]" {
 			t.box.pak = false
 		}
 
