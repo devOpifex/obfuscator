@@ -12,34 +12,71 @@ import (
 const (
 	_ int = iota
 	LOWEST
-	EQUALS      // ==
-	LESSGREATER // > or <
-	SUM         // +
-	PRODUCT     // *
-	PREFIX      // -X or !X
-	CALL        // call(X)
-	INDEX
+	ASSIGN      // <- and = (lowest precedence)
+	RIGHTASSIGN // ->
+	TILDE       // ~
+	OR          // |
+	AND         // &
+	UNARY       // ! and unary - and +
+	COMPARISON  // == >= > < <= !=
+	PLUS        // binary + and -
+	STAR        // * and /
+	CARET       // ^
+	DOLLAR      // $
+	NAMESPACE   // :: and :::
+	SUBSET      // [] [[]]
+	CALL        // ()
+	INDEX       // highest precedence
 )
 
 var precedences = map[token.ItemType]int{
-	token.ItemAssign:            EQUALS,
-	token.ItemDoubleEqual:       EQUALS,
-	token.ItemNotEqual:          EQUALS,
-	token.ItemLessThan:          LESSGREATER,
-	token.ItemGreaterThan:       LESSGREATER,
-	token.ItemPlus:              SUM,
-	token.ItemComma:             SUM,
-	token.ItemMinus:             SUM,
-	token.ItemDivide:            PRODUCT,
-	token.ItemMultiply:          PRODUCT,
-	token.ItemPipe:              PRODUCT,
-	token.ItemInfix:             PRODUCT,
-	token.ItemLeftParen:         CALL,
-	token.ItemDollar:            SUM,
-	token.ItemNamespace:         EQUALS,
-	token.ItemNamespaceInternal: EQUALS,
-	token.ItemLeftSquare:        EQUALS,
-	token.ItemDoubleLeftSquare:  EQUALS,
+	// Assignment operators (lowest precedence)
+	token.ItemAssign: ASSIGN,
+
+	// Tilde
+	token.ItemTilde: TILDE,
+
+	// Logical operators
+	token.ItemOr:        OR,  // |
+	token.ItemDoubleOr:  OR,  // ||
+	token.ItemAnd:       AND, // &
+	token.ItemDoubleAnd: AND, // &&
+
+	// Unary operators
+	token.ItemBang: UNARY, // !
+
+	// Comparison operators
+	token.ItemDoubleEqual:    COMPARISON, // ==
+	token.ItemNotEqual:       COMPARISON, // !=
+	token.ItemLessThan:       COMPARISON, // <
+	token.ItemLessOrEqual:    COMPARISON, // <=
+	token.ItemGreaterThan:    COMPARISON, // >
+	token.ItemGreaterOrEqual: COMPARISON, // >=
+
+	// Arithmetic operators
+	token.ItemPlus:     PLUS,  // binary +
+	token.ItemMinus:    PLUS,  // binary -
+	token.ItemMultiply: STAR,  // *
+	token.ItemDivide:   STAR,  // /
+	token.ItemCaret:    CARET, // ^
+
+	// Special operators
+	token.ItemDollar:            DOLLAR,    // $
+	token.ItemNamespace:         NAMESPACE, // ::
+	token.ItemNamespaceInternal: NAMESPACE, // :::
+
+	// Subsetting operators
+	token.ItemLeftSquare:       SUBSET, // [
+	token.ItemDoubleLeftSquare: SUBSET, // [[
+
+	// Function call
+	token.ItemLeftParen: CALL, // (
+
+	// Other operators that need specific precedence
+	token.ItemColon: PLUS,   // :
+	token.ItemPipe:  OR,     // |>
+	token.ItemInfix: STAR,   // %op%
+	token.ItemComma: LOWEST, // ,
 }
 
 type (
@@ -488,7 +525,7 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 
 	p.nextToken()
 
-	expression.Right = p.parseExpression(PREFIX)
+	expression.Right = p.parseExpression(UNARY)
 
 	return expression
 }

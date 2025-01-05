@@ -317,6 +317,18 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
+	if r1 == '^' {
+		l.next()
+		l.emit(token.ItemCaret)
+		return lexDefault
+	}
+
+	if r1 == '~' {
+		l.next()
+		l.emit(token.ItemTilde)
+		return lexDefault
+	}
+
 	if r1 == '>' && r2 == '=' {
 		l.next()
 		l.next()
@@ -373,6 +385,13 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
+	if r1 == '&' && r2 == '&' {
+		l.next()
+		l.next()
+		l.emit(token.ItemDoubleAnd)
+		return lexDefault
+	}
+
 	if r1 == '&' {
 		l.next()
 		l.emit(token.ItemAnd)
@@ -383,6 +402,13 @@ func lexDefault(l *Lexer) stateFn {
 		l.next()
 		l.next()
 		l.emit(token.ItemPipe)
+		return lexDefault
+	}
+
+	if r1 == '|' && r2 == '|' {
+		l.next()
+		l.next()
+		l.emit(token.ItemDoubleOr)
 		return lexDefault
 	}
 

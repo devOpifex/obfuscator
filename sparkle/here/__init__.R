@@ -1,4 +1,4 @@
 # LICENSE SPARKLE TECH
 
 #' @export
-box::use(./index[.OWIzYTRjMzIwYTU5MDM3MDk4ZDUyYTNmOTY2NGE5YTNiMmQ1YWE1Zg,.MTUzY2QxYTQxNTdlOWFlNGVjYTgxZWJmMzVjMDE1MDFmNGM2YjA3OA],);
+box::use(./index[get_home],p_rint,);

@@ -1,6 +1,6 @@
 # LICENSE SPARKLE TECH
 
 #' @export
-.OWIzYTRjMzIwYTU5MDM3MDk4ZDUyYTNmOTY2NGE5YTNiMmQ1YWE1Zg=\(req,res){.NzYwMjg0NjJiM2VjMDUyNjdkZDE0MmEwZTkzYTQwMTMxOGJiNzcwNA=list(.ZDMzNGVjN2NlMTcxODc1ZmE3ZTNhOTUxMTA1NDA4MjdjMDZhMDY2NA="Hello, World!");.NzYwMjg0NjJiM2VjMDUyNjdkZDE0MmEwZTkzYTQwMTMxOGJiNzcwNA$.ZDMzNGVjN2NlMTcxODc1ZmE3ZTNhOTUxMTA1NDA4MjdjMDZhMDY2NA|>res$send();};
+get_home=\(req,res){x=list(title="Hello, World!");x$title|>res$send();};
 #' @export
-.MTUzY2QxYTQxNTdlOWFlNGVjYTgxZWJmMzVjMDE1MDFmNGM2YjA3OA=\(.NzYwMjg0NjJiM2VjMDUyNjdkZDE0MmEwZTkzYTQwMTMxOGJiNzcwNA){print(.NzYwMjg0NjJiM2VjMDUyNjdkZDE0MmEwZTkzYTQwMTMxOGJiNzcwNA);};
+p_rint=\(x){print(x);};
