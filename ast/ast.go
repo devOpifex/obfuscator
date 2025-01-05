@@ -63,6 +63,22 @@ func (c *CommentStatement) String() string {
 	return out.String()
 }
 
+type ExportStatement struct {
+	Token token.Item
+	Value string
+}
+
+func (e *ExportStatement) Item() token.Item     { return e.Token }
+func (e *ExportStatement) statementNode()       {}
+func (e *ExportStatement) TokenLiteral() string { return e.Token.Value }
+func (e *ExportStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("#' @export")
+
+	return out.String()
+}
+
 type ExpressionStatement struct {
 	Token      token.Item // the first token of the expression
 	Expression Expression

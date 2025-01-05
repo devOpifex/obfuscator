@@ -7,15 +7,21 @@ import (
 	"github.com/sparkle-tech/obfuscator/environment"
 	"github.com/sparkle-tech/obfuscator/lexer"
 	"github.com/sparkle-tech/obfuscator/obfuscator"
+	"github.com/sparkle-tech/obfuscator/r"
 	"github.com/sparkle-tech/obfuscator/token"
 )
 
 type Transpiler struct {
 	code        []string
 	env         *environment.Environment
-	callStack   obfuscator.Stack
 	methodStack obfuscator.Stack
 	file        lexer.File
+	box         box
+}
+
+type box struct {
+	active bool
+	pak    bool
 }
 
 type Transpilers []*Transpiler
@@ -27,6 +33,7 @@ func New(env *environment.Environment, files lexer.Files) Transpilers {
 		ts = append(ts, &Transpiler{
 			env:  env,
 			file: f,
+			box:  box{},
 		})
 	}
 
@@ -60,8 +67,8 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 	case *ast.Keyword:
 		t.addCode(node.Value)
 
-	case *ast.CommentStatement:
-		t.addCode("")
+	case *ast.ExportStatement:
+		t.addCode("\n#' @export\n")
 
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
@@ -73,6 +80,11 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.obfuscateMethod(node)
 
 	case *ast.Identifier:
+		if t.box.active && t.box.pak {
+			t.addCode(node.Value)
+			return node
+		}
+
 		v, ok := t.env.GetVariable(node.Value, true)
 
 		if ok {
@@ -140,6 +152,10 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			node.Operator = "="
 		}
 
+		if t.box.active && node.Operator == "[" {
+			t.box.pak = false
+		}
+
 		switch node.Right.(type) {
 		case *ast.FunctionLiteral:
 			t.env.SetFunction(node.Left.Item().Value, environment.Function{
@@ -149,11 +165,12 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 		switch l := node.Left.(type) {
 		case *ast.Identifier:
-			if node.Operator != "=" {
+			if t.box.active && node.Operator == "[" {
+				t.box.pak = r.IsPackage(l.Value)
 				break
 			}
 
-			if t.inMethod() {
+			if node.Operator != "=" || t.inMethod() {
 				break
 			}
 
@@ -235,6 +252,9 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 			continue
 		}
 		t.Transpile(statement)
+		if statement.Item().Class == token.ItemExport {
+			continue
+		}
 		t.addCode(";")
 	}
 
@@ -262,7 +282,6 @@ func (t *Transpiler) obfuscateMethod(node *ast.Method) {
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
-	t.callStack = t.callStack.Push(node.Name, true)
 	name := node.Name
 	fn, ok := t.env.GetFunction(name, true)
 
@@ -270,12 +289,21 @@ func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 		name = fn.Obfuscated
 	}
 
+	if name == "use" {
+		t.box.active = true
+		t.box.pak = false
+	}
+
 	t.addCode(name + "(")
 	for _, a := range node.Arguments {
 		t.Transpile(a.Expression)
 	}
 	t.addCode(")")
-	t.callStack = t.callStack.Pop()
+
+	if name == "use" {
+		t.box.active = false
+		t.box.pak = false
+	}
 }
 
 func (t *Transpiler) GetCode() string {

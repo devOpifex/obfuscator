@@ -10,7 +10,7 @@ import (
 func (ts Transpilers) Write(out string, header string) {
 	for _, t := range ts {
 		t.replaceRoot(out)
-		if err := t.write(); err != nil {
+		if err := t.write(header); err != nil {
 			fmt.Println(err)
 		}
 	}
@@ -23,14 +23,14 @@ func (t *Transpiler) replaceRoot(out string) {
 	t.file.Path = filepath.Join(out, filepath.Join(path...))
 }
 
-func (t *Transpiler) write() error {
+func (t *Transpiler) write(header string) error {
 	dir := filepath.Dir(t.file.Path)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(t.file.Path, []byte(t.GetCode()), 0644); err != nil {
+	if err := os.WriteFile(t.file.Path, []byte(header+t.GetCode()), 0644); err != nil {
 		return err
 	}
 

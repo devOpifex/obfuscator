@@ -233,6 +233,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Class {
 	case token.ItemComment:
 		return p.parseCommentStatement()
+	case token.ItemExport:
+		return p.parseExportStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -452,6 +454,10 @@ func (p *Parser) parseBoolean() ast.Expression {
 
 func (p *Parser) parseCommentStatement() ast.Statement {
 	return &ast.CommentStatement{Token: p.curToken, Value: p.curToken.Value}
+}
+
+func (p *Parser) parseExportStatement() ast.Statement {
+	return &ast.ExportStatement{Token: p.curToken, Value: p.curToken.Value}
 }
 
 func (p *Parser) parseStringLiteral() ast.Expression {

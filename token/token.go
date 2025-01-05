@@ -108,6 +108,7 @@ const (
 
 	// comment
 	ItemComment
+	ItemExport
 
 	// compare
 	ItemDoubleEqual
