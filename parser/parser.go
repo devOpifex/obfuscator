@@ -73,10 +73,9 @@ var precedences = map[token.ItemType]int{
 	token.ItemLeftParen: CALL, // (
 
 	// Other operators that need specific precedence
-	token.ItemColon: PLUS,   // :
-	token.ItemPipe:  OR,     // |>
-	token.ItemInfix: STAR,   // %op%
-	token.ItemComma: LOWEST, // ,
+	token.ItemColon: PLUS, // :
+	token.ItemPipe:  OR,   // |>
+	token.ItemInfix: STAR, // %op%
 }
 
 type (
@@ -615,6 +614,58 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	return block
 }
 
+func (p *Parser) parseFunctionParameters() []*ast.Argument {
+	var params []*ast.Argument
+
+	// Handle empty parameter list
+	if p.peekTokenIs(token.ItemRightParen) {
+		p.nextToken()
+		return params
+	}
+
+	p.nextToken() // move past opening paren
+
+	for !p.curTokenIs(token.ItemRightParen) && !p.curTokenIs(token.ItemEOF) {
+		if p.curTokenIs(token.ItemComma) {
+			p.nextToken()
+			continue
+		}
+
+		arg := &ast.Argument{
+			Token: p.curToken,
+		}
+
+		// Check for named parameter (identifier followed by =)
+		if p.curTokenIs(token.ItemIdent) && p.peekTokenIs(token.ItemAssign) {
+			name := p.curToken.Value
+			p.nextToken() // move past identifier
+			p.nextToken() // move past =
+			arg.Name = name
+			arg.Value = p.parseExpression(LOWEST)
+		} else {
+			// Unnamed parameter
+			arg.Value = p.parseExpression(LOWEST)
+		}
+
+		params = append(params, arg)
+
+		// Break if we're at the end
+		if p.peekTokenIs(token.ItemRightParen) {
+			p.nextToken()
+			break
+		}
+
+		// Expect comma between parameters
+		if !p.peekTokenIs(token.ItemComma) {
+			p.nextToken()
+		}
+
+		p.nextToken() // move past comma
+	}
+
+	return params
+}
+
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 
@@ -622,7 +673,6 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		return nil
 	}
 
-	p.nextToken()
 	lit.Parameters = p.parseFunctionParameters()
 
 	if !p.expectPeek(token.ItemLeftCurly) {
@@ -634,38 +684,6 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	return lit
 }
 
-func (p *Parser) parseFunctionParameters() []*ast.ExpressionStatement {
-	statements := []*ast.ExpressionStatement{}
-
-	if p.peekTokenIs(token.ItemRightParen) {
-		stmt := p.parseExpressionStatement()
-		statements = append(statements, stmt)
-		p.nextToken()
-		return statements
-	}
-
-	for !p.curTokenIs(token.ItemRightParen) && !p.curTokenIs(token.ItemEOF) {
-		stmt := p.parseExpressionStatement()
-		if stmt != nil {
-			statements = append(statements, stmt)
-		}
-
-		if p.curTokenIs(token.ItemRightParen) {
-			break
-		}
-
-		if p.peekTokenIs(token.ItemComma) {
-			p.nextToken()
-			p.nextToken()
-			continue
-		}
-
-		p.nextToken()
-	}
-
-	return statements
-}
-
 func (p *Parser) parseSquare() ast.Expression {
 	return &ast.Square{
 		Token: p.curToken,
@@ -675,12 +693,12 @@ func (p *Parser) parseSquare() ast.Expression {
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Name: function.Item().Value}
 
-	p.nextToken()
 	exp.Arguments = p.parseFunctionParameters()
 
-	if !p.peekTokenIs(token.ItemIdent) {
-		p.nextToken()
+	if !p.curTokenIs(token.ItemRightParen) {
+		return nil
 	}
+
 	return exp
 }
 
@@ -688,12 +706,12 @@ func (p *Parser) parseMethod() ast.Expression {
 	exp := &ast.Method{Token: p.curToken, Name: p.curToken.Value}
 
 	p.nextToken()
-	p.nextToken()
 	exp.Arguments = p.parseFunctionParameters()
 
-	if !p.peekTokenIs(token.ItemIdent) {
-		p.nextToken()
+	if !p.curTokenIs(token.ItemRightParen) {
+		return nil
 	}
+
 	return exp
 }
 

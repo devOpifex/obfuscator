@@ -2,7 +2,6 @@ package ast
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/sparkle-tech/obfuscator/token"
 )
@@ -383,7 +382,7 @@ func (ie *IfExpression) String() string {
 
 type FunctionLiteral struct {
 	Token      token.Item // The 'function' token
-	Parameters []*ExpressionStatement
+	Parameters []*Argument
 	Body       *BlockStatement
 }
 
@@ -392,14 +391,12 @@ func (fl *FunctionLiteral) expressionNode()      {}
 func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Value }
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
-	args := []string{}
-	for _, a := range fl.Parameters {
-		args = append(args, a.String())
-	}
 
 	out.WriteString("\\")
 	out.WriteString("(")
-	out.WriteString(strings.Join(args, ","))
+	for _, a := range fl.Parameters {
+		out.WriteString(a.Name)
+	}
 	out.WriteString("){")
 	out.WriteString(fl.Body.String())
 	out.WriteString("}")
@@ -411,7 +408,7 @@ type Parameter struct {
 	Token    token.Item // The 'func' token
 	Name     string
 	Operator string
-	Default  *ExpressionStatement
+	Default  Expression
 	Method   bool
 }
 
@@ -437,7 +434,7 @@ type Argument struct {
 type CallExpression struct {
 	Token     token.Item // The '(' token
 	Name      string
-	Arguments []*ExpressionStatement
+	Arguments []*Argument
 }
 
 func (ce *CallExpression) Item() token.Item     { return ce.Token }
@@ -446,14 +443,11 @@ func (ce *CallExpression) TokenLiteral() string { return ce.Token.Value }
 func (ce *CallExpression) String() string {
 	var out bytes.Buffer
 
-	args := []string{}
-	for _, a := range ce.Arguments {
-		args = append(args, a.String())
-	}
-
 	out.WriteString(ce.Name)
 	out.WriteString("(")
-	out.WriteString(strings.Join(args, ","))
+	for _, a := range ce.Arguments {
+		out.WriteString(a.Name)
+	}
 	out.WriteString(")")
 
 	return out.String()
@@ -462,7 +456,7 @@ func (ce *CallExpression) String() string {
 type Method struct {
 	Token     token.Item // The '(' token
 	Name      string
-	Arguments []*ExpressionStatement
+	Arguments []*Argument
 }
 
 func (m *Method) Item() token.Item     { return m.Token }
@@ -471,14 +465,11 @@ func (m *Method) TokenLiteral() string { return m.Token.Value }
 func (m *Method) String() string {
 	var out bytes.Buffer
 
-	args := []string{}
-	for _, a := range m.Arguments {
-		args = append(args, a.String())
-	}
-
 	out.WriteString(m.Name)
 	out.WriteString("(")
-	out.WriteString(strings.Join(args, ","))
+	for _, a := range m.Arguments {
+		out.WriteString(a.Name)
+	}
 	out.WriteString(")")
 
 	return out.String()

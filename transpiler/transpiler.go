@@ -160,21 +160,12 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.env = environment.Enclose(t.env)
 
 		t.addCode("\\(")
-
-		for i, p := range node.Parameters {
-			switch n := p.Expression.(type) {
-			case *ast.Identifier:
-				t.env.SetVariable(n.Value, environment.Variable{
-					Name: n.Value,
-				})
+		for _, p := range node.Parameters {
+			if p.Name != "" {
+				t.addCode(p.Name + "=")
 			}
-			t.Transpile(p.Expression)
-
-			if i < len(node.Parameters)-1 {
-				t.addCode(",")
-			}
+			t.Transpile(p.Value)
 		}
-
 		t.addCode("){")
 		if node.Body != nil {
 			t.Transpile(node.Body)
@@ -209,22 +200,22 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 
 func (t *Transpiler) obfuscateMethod(node *ast.Method) {
 	t.addCode(node.Name + "(")
-	for i, a := range node.Arguments {
-		t.Transpile(a)
-		if i < len(node.Arguments)-1 {
-			t.addCode(",")
+	for _, a := range node.Arguments {
+		if a.Name != "" {
+			t.addCode(a.Name + "=")
 		}
+		t.Transpile(a.Value)
 	}
 	t.addCode(")")
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 	t.addCode(node.Name + "(")
-	for i, a := range node.Arguments {
-		t.Transpile(a.Expression)
-		if i < len(node.Arguments)-1 {
-			t.addCode(",")
+	for _, a := range node.Arguments {
+		if a.Name != "" {
+			t.addCode(a.Name + "=")
 		}
+		t.Transpile(a.Value)
 	}
 	t.addCode(")")
 }

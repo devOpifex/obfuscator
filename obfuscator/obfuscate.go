@@ -117,16 +117,7 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 	case *ast.FunctionLiteral:
 		o.env = environment.Enclose(o.env)
 
-		for _, p := range node.Parameters {
-			node := o.Obfuscate(p.Expression)
-
-			switch n := node.(type) {
-			case *ast.Identifier:
-				o.env.SetVariable(n.Value, environment.Variable{
-					Name: n.Value,
-				})
-			}
-		}
+		// Obfuscate parameters
 
 		if node.Body != nil {
 			o.Obfuscate(node.Body)
@@ -154,16 +145,12 @@ func (o *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 
 func (o *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
 	o.callStack = o.callStack.Push(node.Name, false)
-	for _, a := range node.Arguments {
-		o.Obfuscate(a)
-	}
+	// Obfuscate Arguments
 	o.callStack = o.callStack.Pop()
 }
 
 func (o *Obfuscator) obfuscateMethod(node *ast.Method) {
 	o.callStack = o.callStack.Push(node.Name, true)
-	for _, a := range node.Arguments {
-		o.Obfuscate(a)
-	}
+	// Obfuscate Arguments
 	o.callStack = o.callStack.Pop()
 }
