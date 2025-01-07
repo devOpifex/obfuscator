@@ -160,11 +160,14 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.env = environment.Enclose(t.env)
 
 		t.addCode("\\(")
-		for _, p := range node.Parameters {
+		for i, p := range node.Parameters {
 			if p.Name != "" {
 				t.addCode(p.Name + "=")
 			}
 			t.Transpile(p.Value)
+			if i < len(node.Parameters)-1 {
+				t.addCode(",")
+			}
 		}
 		t.addCode("){")
 		if node.Body != nil {
@@ -200,22 +203,28 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 
 func (t *Transpiler) obfuscateMethod(node *ast.Method) {
 	t.addCode(node.Name + "(")
-	for _, a := range node.Arguments {
+	for i, a := range node.Arguments {
 		if a.Name != "" {
 			t.addCode(a.Name + "=")
 		}
 		t.Transpile(a.Value)
+		if i < len(node.Arguments)-1 {
+			t.addCode(",")
+		}
 	}
 	t.addCode(")")
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 	t.addCode(node.Name + "(")
-	for _, a := range node.Arguments {
+	for i, a := range node.Arguments {
 		if a.Name != "" {
 			t.addCode(a.Name + "=")
 		}
 		t.Transpile(a.Value)
+		if i < len(node.Arguments)-1 {
+			t.addCode(",")
+		}
 	}
 	t.addCode(")")
 }

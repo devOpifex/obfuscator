@@ -76,6 +76,8 @@ var precedences = map[token.ItemType]int{
 	token.ItemColon: PLUS, // :
 	token.ItemPipe:  OR,   // |>
 	token.ItemInfix: STAR, // %op%
+
+	token.ItemComma: INDEX,
 }
 
 type (
@@ -655,7 +657,11 @@ func (p *Parser) parseFunctionParameters() []*ast.Argument {
 			break
 		}
 
-		// Expect comma between parameters
+		// this is strange but it's due to how we parse
+		// e.g.: function(x = c(1,2,3))
+		// the closing ) of the vector never gets processed
+		// AFAIK there may only be a single trailing signif character
+		// so we just skip
 		if !p.peekTokenIs(token.ItemComma) {
 			p.nextToken()
 		}
