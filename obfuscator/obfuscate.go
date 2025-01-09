@@ -7,9 +7,8 @@ import (
 )
 
 type Obfuscator struct {
-	env       *environment.Environment
-	callStack Stack
-	files     lexer.Files
+	env   *environment.Environment
+	files lexer.Files
 }
 
 func New(env *environment.Environment, files lexer.Files) *Obfuscator {
@@ -19,15 +18,10 @@ func New(env *environment.Environment, files lexer.Files) *Obfuscator {
 	}
 }
 
-func (o *Obfuscator) run() {
+func (o *Obfuscator) Run() {
 	for _, p := range o.files {
 		o.Obfuscate(p.Ast)
 	}
-}
-
-func (o *Obfuscator) RunTwice() {
-	o.run()
-	o.run()
 }
 
 func (o *Obfuscator) Files() lexer.Files {
@@ -71,36 +65,18 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 
 	case *ast.InfixExpression:
 		o.Obfuscate(node.Left)
-		o.Obfuscate(node.Right)
 
-		if node.Operator == "::" || node.Operator == ":::" {
-			return node
-		}
-
-		switch l := node.Left.(type) {
-		case *ast.Identifier:
-			switch n := node.Right.(type) {
-			case *ast.FunctionLiteral:
-				o.env.SetFunction(l.Value, environment.Function{
-					Name:  l.Value,
-					Value: n,
-				})
-			default:
-				ok, c := o.callStack.Get()
-
-				if ok && c.name != "" {
-					break
-				}
-
-				if node.Operator == "$" {
-					break
-				}
-
-				o.env.SetVariable(l.Value, environment.Variable{
-					Name: l.Value,
+		if node.Operator == "=" || node.Operator == "<-" {
+			switch n := node.Left.(type) {
+			case *ast.Identifier:
+				o.env.SetVariable(n.Value, environment.Variable{
+					Name: n.Value,
 				})
 			}
 		}
+
+		o.Obfuscate(node.Right)
+		return node.Right
 
 	case *ast.IfExpression:
 		o.Obfuscate(node.Condition)
@@ -116,8 +92,6 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 
 	case *ast.FunctionLiteral:
 		o.env = environment.Enclose(o.env)
-
-		// Obfuscate parameters
 
 		if node.Body != nil {
 			o.Obfuscate(node.Body)
@@ -144,13 +118,13 @@ func (o *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 }
 
 func (o *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
-	o.callStack = o.callStack.Push(node.Name, false)
-	// Obfuscate Arguments
-	o.callStack = o.callStack.Pop()
+	for _, a := range node.Arguments {
+		o.Obfuscate(a.Value)
+	}
 }
 
 func (o *Obfuscator) obfuscateMethod(node *ast.Method) {
-	o.callStack = o.callStack.Push(node.Name, true)
-	// Obfuscate Arguments
-	o.callStack = o.callStack.Pop()
+	for _, a := range node.Arguments {
+		o.Obfuscate(a.Value)
+	}
 }

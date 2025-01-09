@@ -7,6 +7,7 @@ import (
 	"github.com/sparkle-tech/obfuscator/cli"
 	"github.com/sparkle-tech/obfuscator/environment"
 	"github.com/sparkle-tech/obfuscator/lexer"
+	"github.com/sparkle-tech/obfuscator/obfuscator"
 	"github.com/sparkle-tech/obfuscator/parser"
 	"github.com/sparkle-tech/obfuscator/transpiler"
 )
@@ -49,8 +50,8 @@ func main() {
 	environment.SetKey(*c.Key)
 	env := environment.New()
 
-	//o := obfuscator.New(env, p.Files())
-	//o.RunTwice()
+	o := obfuscator.New(env, p.Files())
+	o.Run()
 
 	t := transpiler.New(env, p.Files())
 	t.Run()

@@ -6,15 +6,13 @@ import (
 	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/environment"
 	"github.com/sparkle-tech/obfuscator/lexer"
-	"github.com/sparkle-tech/obfuscator/obfuscator"
 	"github.com/sparkle-tech/obfuscator/token"
 )
 
 type Transpiler struct {
-	code        []string
-	env         *environment.Environment
-	methodStack obfuscator.Stack
-	file        lexer.File
+	code []string
+	env  *environment.Environment
+	file lexer.File
 }
 
 type Transpilers []*Transpiler
@@ -235,8 +233,4 @@ func (t *Transpiler) GetCode() string {
 
 func (t *Transpiler) addCode(code string) {
 	t.code = append(t.code, code)
-}
-
-func (t *Transpiler) inMethod() bool {
-	return len(t.methodStack) > 0
 }
