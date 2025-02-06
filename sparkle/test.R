@@ -1,2 +1,2 @@
 # LICENSE SPARKLE TECH
-box::use(ambiorix[Ambiorix],./here[.OWIzYTRjMzIwYTU5MDM3MDk4ZDUyYTNmOTY2NGE5YTNiMmQ1YWE1Zg,.MTUzY2QxYTQxNTdlOWFlNGVjYTgxZWJmMzVjMDE1MDFmNGM2YjA3OA],);.MTUzY2QxYTQxNTdlOWFlNGVjYTgxZWJmMzVjMDE1MDFmNGM2YjA3OA("starting...");.YjQxNzk4ZTcyYTQ0MDZhMWM4ZmQyMzcyZmI3MWY1ZDM0YTg3ZDJjOA=Ambiorix$new(port=8000L);.YjQxNzk4ZTcyYTQ0MDZhMWM4ZmQyMzcyZmI3MWY1ZDM0YTg3ZDJjOA$get("/",.OWIzYTRjMzIwYTU5MDM3MDk4ZDUyYTNmOTY2NGE5YTNiMmQ1YWE1Zg);.YjQxNzk4ZTcyYTQ0MDZhMWM4ZmQyMzcyZmI3MWY1ZDM0YTg3ZDJjOA$start();
+box::use(ambiorix[Ambiorix],./here[get_home,p_rint],);app=Ambiorix$new(port=8000L);app$get("/",get_home);app$start();

@@ -49,10 +49,11 @@ func main() {
 
 	environment.SetKey(*c.Key)
 	env := environment.New()
-	o := obfuscator.New(env, p.Files())
-	o.RunTwice()
 
-	t := transpiler.New(env, o.Files())
+	o := obfuscator.New(env, p.Files())
+	o.Run()
+
+	t := transpiler.New(env, p.Files())
 	t.Run()
 	t.Write(*c.Out, header)
 }

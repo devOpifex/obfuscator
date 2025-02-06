@@ -278,6 +278,13 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
+	if r1 == '.' && r2 == '.' {
+		l.next()
+		l.next()
+		l.emit(token.ItemDoubleDot)
+		return lexDefault
+	}
+
 	if r1 == '.' {
 		l.next()
 		l.emit(token.ItemDot)
@@ -314,6 +321,18 @@ func lexDefault(l *Lexer) stateFn {
 	if r1 == '!' {
 		l.next()
 		l.emit(token.ItemBang)
+		return lexDefault
+	}
+
+	if r1 == '^' {
+		l.next()
+		l.emit(token.ItemCaret)
+		return lexDefault
+	}
+
+	if r1 == '~' {
+		l.next()
+		l.emit(token.ItemTilde)
 		return lexDefault
 	}
 
@@ -373,6 +392,13 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
+	if r1 == '&' && r2 == '&' {
+		l.next()
+		l.next()
+		l.emit(token.ItemDoubleAnd)
+		return lexDefault
+	}
+
 	if r1 == '&' {
 		l.next()
 		l.emit(token.ItemAnd)
@@ -383,6 +409,13 @@ func lexDefault(l *Lexer) stateFn {
 		l.next()
 		l.next()
 		l.emit(token.ItemPipe)
+		return lexDefault
+	}
+
+	if r1 == '|' && r2 == '|' {
+		l.next()
+		l.next()
+		l.emit(token.ItemDoubleOr)
 		return lexDefault
 	}
 

@@ -6,22 +6,13 @@ import (
 	"github.com/sparkle-tech/obfuscator/ast"
 	"github.com/sparkle-tech/obfuscator/environment"
 	"github.com/sparkle-tech/obfuscator/lexer"
-	"github.com/sparkle-tech/obfuscator/obfuscator"
-	"github.com/sparkle-tech/obfuscator/r"
 	"github.com/sparkle-tech/obfuscator/token"
 )
 
 type Transpiler struct {
-	code        []string
-	env         *environment.Environment
-	methodStack obfuscator.Stack
-	file        lexer.File
-	box         box
-}
-
-type box struct {
-	active bool
-	pak    bool
+	code []string
+	env  *environment.Environment
+	file lexer.File
 }
 
 type Transpilers []*Transpiler
@@ -33,7 +24,6 @@ func New(env *environment.Environment, files lexer.Files) Transpilers {
 		ts = append(ts, &Transpiler{
 			env:  env,
 			file: f,
-			box:  box{},
 		})
 	}
 
@@ -80,25 +70,6 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.obfuscateMethod(node)
 
 	case *ast.Identifier:
-		if t.box.active && t.box.pak {
-			t.addCode(node.Value)
-			return node
-		}
-
-		v, ok := t.env.GetVariable(node.Value, true)
-
-		if ok {
-			t.addCode(v.Obfuscated)
-			return node
-		}
-
-		fn, ok := t.env.GetFunction(node.Value, true)
-
-		if ok {
-			t.addCode(fn.Obfuscated)
-			return node
-		}
-
 		t.addCode(node.Value)
 		return node
 
@@ -144,54 +115,24 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.env = environment.Open(t.env)
 
 	case *ast.InfixExpression:
-		if node.Operator == "in" {
-			t.addCode(" ")
-		}
-
 		if node.Operator == "<-" {
 			node.Operator = "="
 		}
 
-		if t.box.active && node.Operator == "[" {
-			t.box.pak = false
-		}
-
-		switch node.Right.(type) {
-		case *ast.FunctionLiteral:
-			t.env.SetFunction(node.Left.Item().Value, environment.Function{
-				Name: node.Left.Item().Value,
-			})
-		}
-
-		switch l := node.Left.(type) {
-		case *ast.Identifier:
-			if t.box.active && node.Operator == "[" {
-				t.box.pak = r.IsPackage(l.Value)
-				break
-			}
-
-			if node.Operator != "=" || t.inMethod() {
-				break
-			}
-
-			t.env.SetVariable(l.Value, environment.Variable{
-				Name: l.Value,
-			})
+		if node.Operator == "in" {
+			node.Operator = " in "
 		}
 
 		t.Transpile(node.Left)
-
 		t.addCode(node.Operator)
-
-		if node.Operator == "in" {
-			t.addCode(" ")
-		}
-
 		t.Transpile(node.Right)
 
-		if node.Operator == "[" {
-			t.addCode("]")
-		}
+	case *ast.Square:
+		t.addCode(node.Token.Value)
+
+	case *ast.PostfixExpression:
+		t.Transpile(node.Left)
+		t.addCode(node.Postfix)
 
 	case *ast.IfExpression:
 		t.addCode("if(")
@@ -214,21 +155,15 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.env = environment.Enclose(t.env)
 
 		t.addCode("\\(")
-
 		for i, p := range node.Parameters {
-			switch n := p.Expression.(type) {
-			case *ast.Identifier:
-				t.env.SetVariable(n.Value, environment.Variable{
-					Name: n.Value,
-				})
+			if p.Name != "" {
+				t.addCode(p.Name + "=")
 			}
-			t.Transpile(p.Expression)
-
+			t.Transpile(p.Value)
 			if i < len(node.Parameters)-1 {
 				t.addCode(",")
 			}
 		}
-
 		t.addCode("){")
 		if node.Body != nil {
 			t.Transpile(node.Body)
@@ -262,48 +197,25 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 }
 
 func (t *Transpiler) obfuscateMethod(node *ast.Method) {
-	t.methodStack = t.methodStack.Push(node.Name, false)
-	name := node.Name
-	fn, ok := t.env.GetFunction(name, true)
-
-	if ok {
-		name = fn.Obfuscated
-	}
-
-	t.addCode(name + "(")
-	for i, a := range node.Arguments {
-		t.Transpile(a)
-		if i < len(node.Arguments)-1 {
-			t.addCode(",")
+	t.addCode(node.Name + "(")
+	for _, a := range node.Arguments {
+		if a.Name != "" {
+			t.addCode(a.Name + "=")
 		}
+		t.Transpile(a.Value)
 	}
 	t.addCode(")")
-	t.methodStack = t.methodStack.Pop()
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
-	name := node.Name
-	fn, ok := t.env.GetFunction(name, true)
-
-	if ok {
-		name = fn.Obfuscated
-	}
-
-	if name == "use" {
-		t.box.active = true
-		t.box.pak = false
-	}
-
-	t.addCode(name + "(")
+	t.addCode(node.Name + "(")
 	for _, a := range node.Arguments {
-		t.Transpile(a.Expression)
+		if a.Name != "" {
+			t.addCode(a.Name + "=")
+		}
+		t.Transpile(a.Value)
 	}
 	t.addCode(")")
-
-	if name == "use" {
-		t.box.active = false
-		t.box.pak = false
-	}
 }
 
 func (t *Transpiler) GetCode() string {
@@ -312,8 +224,4 @@ func (t *Transpiler) GetCode() string {
 
 func (t *Transpiler) addCode(code string) {
 	t.code = append(t.code, code)
-}
-
-func (t *Transpiler) inMethod() bool {
-	return len(t.methodStack) > 0
 }

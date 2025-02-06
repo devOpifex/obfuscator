@@ -41,6 +41,9 @@ const (
 	// dot .
 	ItemDot
 
+	// dot dot ..
+	ItemDoubleDot
+
 	// question mark?
 	ItemQuestion
 
@@ -122,8 +125,16 @@ const (
 	ItemIf
 	ItemElse
 	ItemAnd
+	ItemDoubleAnd
 	ItemOr
+	ItemDoubleOr
 	ItemBreak
+
+	// ^
+	ItemCaret
+
+	// ~
+	ItemTilde
 
 	// Infinite
 	ItemInf

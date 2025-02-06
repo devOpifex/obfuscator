@@ -12,39 +12,80 @@ import (
 const (
 	_ int = iota
 	LOWEST
-	EQUALS      // ==
-	LESSGREATER // > or <
-	SUM         // +
-	PRODUCT     // *
-	PREFIX      // -X or !X
-	CALL        // call(X)
-	INDEX
+	ASSIGN     // <- and = (lowest precedence)
+	TILDE      // ~
+	OR         // |
+	AND        // &
+	UNARY      // ! and unary - and +
+	COMPARISON // == >= > < <= !=
+	PLUS       // binary + and -
+	STAR       // * and /
+	PIPE       // %>% and |>
+	COLON      // :
+	CARET      // ^
+	SUBSET     // [] [[]]
+	DOLLAR     // $
+	NAMESPACE  // :: and :::
+	CALL       // ()
+	INDEX      // highest precedence
 )
 
 var precedences = map[token.ItemType]int{
-	token.ItemAssign:            EQUALS,
-	token.ItemDoubleEqual:       EQUALS,
-	token.ItemNotEqual:          EQUALS,
-	token.ItemLessThan:          LESSGREATER,
-	token.ItemGreaterThan:       LESSGREATER,
-	token.ItemPlus:              SUM,
-	token.ItemComma:             SUM,
-	token.ItemMinus:             SUM,
-	token.ItemDivide:            PRODUCT,
-	token.ItemMultiply:          PRODUCT,
-	token.ItemPipe:              PRODUCT,
-	token.ItemInfix:             PRODUCT,
-	token.ItemLeftParen:         CALL,
-	token.ItemDollar:            SUM,
-	token.ItemNamespace:         EQUALS,
-	token.ItemNamespaceInternal: EQUALS,
-	token.ItemLeftSquare:        EQUALS,
-	token.ItemDoubleLeftSquare:  EQUALS,
+	// Assignment operators (lowest precedence)
+	token.ItemAssign: ASSIGN,
+
+	// Tilde
+	token.ItemTilde: TILDE,
+
+	// Logical operators
+	token.ItemOr:        OR,  // |
+	token.ItemDoubleOr:  OR,  // ||
+	token.ItemAnd:       AND, // &
+	token.ItemDoubleAnd: AND, // &&
+
+	// Unary operators
+	token.ItemBang: UNARY, // !
+
+	// Comparison operators
+	token.ItemDoubleEqual:    COMPARISON, // ==
+	token.ItemNotEqual:       COMPARISON, // !=
+	token.ItemLessThan:       COMPARISON, // <
+	token.ItemLessOrEqual:    COMPARISON, // <=
+	token.ItemGreaterThan:    COMPARISON, // >
+	token.ItemGreaterOrEqual: COMPARISON, // >=
+
+	// Arithmetic operators
+	token.ItemPlus:     PLUS,  // binary +
+	token.ItemMinus:    PLUS,  // binary -
+	token.ItemMultiply: STAR,  // *
+	token.ItemDivide:   STAR,  // /
+	token.ItemCaret:    CARET, // ^
+
+	// Special operators
+	token.ItemDollar:            DOLLAR,    // $
+	token.ItemNamespace:         NAMESPACE, // ::
+	token.ItemNamespaceInternal: NAMESPACE, // :::
+
+	// Subsetting operators
+	token.ItemLeftSquare:       SUBSET, // [
+	token.ItemDoubleLeftSquare: SUBSET, // [[
+
+	// Function call
+	token.ItemLeftParen: CALL, // (
+
+	// Other operators that need specific precedence
+	token.ItemPipe:  PIPE, // |>
+	token.ItemInfix: STAR, // %op%
+
+	token.ItemColon: COLON, // :
+
+	token.ItemComma: INDEX,
 }
 
 type (
-	prefixParseFn func() ast.Expression
-	infixParseFn  func(ast.Expression) ast.Expression
+	prefixParseFn  func() ast.Expression
+	postfixParseFn func() ast.Expression
+	infixParseFn   func(ast.Expression) ast.Expression
 )
 
 type Parser struct {
@@ -58,8 +99,9 @@ type Parser struct {
 
 	filePos int
 
-	prefixParseFns map[token.ItemType]prefixParseFn
-	infixParseFns  map[token.ItemType]infixParseFn
+	postfixParseFns map[token.ItemType]postfixParseFn
+	prefixParseFns  map[token.ItemType]prefixParseFn
+	infixParseFns   map[token.ItemType]infixParseFn
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -82,6 +124,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemSingleQuote, p.parseStringLiteral)
 	p.registerPrefix(token.ItemNA, p.parseNA)
 	p.registerPrefix(token.ItemDot, p.parseDot)
+	p.registerPrefix(token.ItemDoubleDot, p.parseDoubleDot)
 	p.registerPrefix(token.ItemNan, p.parseNan)
 	p.registerPrefix(token.ItemNAComplex, p.parseNaComplex)
 	p.registerPrefix(token.ItemNAReal, p.parseNaReal)
@@ -89,11 +132,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemInf, p.parseInf)
 	p.registerPrefix(token.ItemNULL, p.parseNull)
 	p.registerPrefix(token.ItemThreeDot, p.parseElipsis)
-	p.registerPrefix(token.ItemString, p.parseNaString)
 	p.registerPrefix(token.ItemFor, p.parseFor)
 	p.registerPrefix(token.ItemWhile, p.parseWhile)
-	p.registerPrefix(token.ItemRightSquare, p.parseSquare)
-	p.registerPrefix(token.ItemDoubleRightSquare, p.parseSquare)
 	p.registerPrefix(token.ItemMethod, p.parseMethod)
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
@@ -115,6 +155,12 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.ItemLeftSquare, p.parseInfixExpression)
 	p.registerInfix(token.ItemDoubleLeftSquare, p.parseInfixExpression)
 	p.registerInfix(token.ItemLeftParen, p.parseCallExpression)
+
+	p.postfixParseFns = make(map[token.ItemType]postfixParseFn)
+	p.registerPostfix(token.ItemRightSquare, p.parsePostfixSquare)
+	p.registerPostfix(token.ItemDoubleRightSquare, p.parsePostfixSquare)
+
+	return p
 
 	return p
 }
@@ -327,6 +373,13 @@ func (p *Parser) parseElipsis() ast.Expression {
 	return &ast.Keyword{Token: p.curToken, Value: "..."}
 }
 
+func (p *Parser) parseDoubleDot() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "..",
+	}
+}
+
 func (p *Parser) parseDot() ast.Expression {
 	return &ast.Keyword{
 		Token: p.curToken,
@@ -412,7 +465,19 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		leftExp = infix(leftExp)
 	}
 
-	return leftExp
+	postfix := p.postfixParseFns[p.peekToken.Class]
+
+	if postfix == nil {
+		return leftExp
+	}
+
+	p.nextToken()
+
+	return &ast.PostfixExpression{
+		Token:   p.curToken,
+		Left:    leftExp,
+		Postfix: p.curToken.Value,
+	}
 }
 
 func (p *Parser) peekPrecedence() int {
@@ -488,7 +553,7 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 
 	p.nextToken()
 
-	expression.Right = p.parseExpression(PREFIX)
+	expression.Right = p.parseExpression(UNARY)
 
 	return expression
 }
@@ -578,6 +643,62 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	return block
 }
 
+func (p *Parser) parseFunctionParameters() []*ast.Argument {
+	var params []*ast.Argument
+
+	// Handle empty parameter list
+	if p.peekTokenIs(token.ItemRightParen) {
+		p.nextToken()
+		return params
+	}
+
+	p.nextToken() // move past opening paren
+
+	for !p.curTokenIs(token.ItemRightParen) && !p.curTokenIs(token.ItemEOF) {
+		if p.curTokenIs(token.ItemComma) {
+			p.nextToken()
+			continue
+		}
+
+		arg := &ast.Argument{
+			Token: p.curToken,
+		}
+
+		// Check for named parameter (identifier followed by =)
+		if p.curTokenIs(token.ItemIdent) && p.peekTokenIs(token.ItemAssign) {
+			name := p.curToken.Value
+			p.nextToken() // move past identifier
+			p.nextToken() // move past =
+			arg.Name = name
+			arg.Value = p.parseExpression(LOWEST)
+		} else {
+			// Unnamed parameter
+			arg.Value = p.parseExpression(LOWEST)
+		}
+
+		params = append(params, arg)
+
+		// Break if we're at the end
+		if p.peekTokenIs(token.ItemRightParen) {
+			p.nextToken()
+			break
+		}
+
+		// this is strange but it's due to how we parse
+		// e.g.: function(x = c(1,2,3))
+		// the closing ) of the vector never gets processed
+		// AFAIK there may only be a single trailing signif character
+		// so we just skip
+		if !p.peekTokenIs(token.ItemComma) {
+			p.nextToken()
+		}
+
+		p.nextToken() // move past comma
+	}
+
+	return params
+}
+
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 
@@ -585,7 +706,6 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		return nil
 	}
 
-	p.nextToken()
 	lit.Parameters = p.parseFunctionParameters()
 
 	if !p.expectPeek(token.ItemLeftCurly) {
@@ -597,38 +717,6 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	return lit
 }
 
-func (p *Parser) parseFunctionParameters() []*ast.ExpressionStatement {
-	statements := []*ast.ExpressionStatement{}
-
-	if p.peekTokenIs(token.ItemRightParen) {
-		stmt := p.parseExpressionStatement()
-		statements = append(statements, stmt)
-		p.nextToken()
-		return statements
-	}
-
-	for !p.curTokenIs(token.ItemRightParen) && !p.curTokenIs(token.ItemEOF) {
-		stmt := p.parseExpressionStatement()
-		if stmt != nil {
-			statements = append(statements, stmt)
-		}
-
-		if p.curTokenIs(token.ItemRightParen) {
-			break
-		}
-
-		if p.peekTokenIs(token.ItemComma) {
-			p.nextToken()
-			p.nextToken()
-			continue
-		}
-
-		p.nextToken()
-	}
-
-	return statements
-}
-
 func (p *Parser) parseSquare() ast.Expression {
 	return &ast.Square{
 		Token: p.curToken,
@@ -638,12 +726,12 @@ func (p *Parser) parseSquare() ast.Expression {
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Name: function.Item().Value}
 
-	p.nextToken()
 	exp.Arguments = p.parseFunctionParameters()
 
-	if !p.peekTokenIs(token.ItemIdent) {
-		p.nextToken()
+	if !p.curTokenIs(token.ItemRightParen) {
+		return nil
 	}
+
 	return exp
 }
 
@@ -651,13 +739,19 @@ func (p *Parser) parseMethod() ast.Expression {
 	exp := &ast.Method{Token: p.curToken, Name: p.curToken.Value}
 
 	p.nextToken()
-	p.nextToken()
 	exp.Arguments = p.parseFunctionParameters()
 
-	if !p.peekTokenIs(token.ItemIdent) {
-		p.nextToken()
+	if !p.curTokenIs(token.ItemRightParen) {
+		return nil
 	}
+
 	return exp
+}
+
+func (p *Parser) parsePostfixSquare() ast.Expression {
+	return &ast.Square{
+		Token: p.curToken,
+	}
 }
 
 func (p *Parser) registerPrefix(tokenType token.ItemType, fn prefixParseFn) {
@@ -666,4 +760,8 @@ func (p *Parser) registerPrefix(tokenType token.ItemType, fn prefixParseFn) {
 
 func (p *Parser) registerInfix(tokenType token.ItemType, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerPostfix(tokenType token.ItemType, fn postfixParseFn) {
+	p.postfixParseFns[tokenType] = fn
 }

@@ -1,12 +1,6 @@
 package environment
 
-import (
-	"crypto/sha1"
-	"encoding/base64"
-	"encoding/hex"
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 var KEY string = "DEFAULT"
 
@@ -80,9 +74,14 @@ func (e *Environment) SetFunction(name string, val Function) Function {
 }
 
 func mask(txt string) string {
-	hasher := sha1.New()
-	hasher.Write([]byte(txt + KEY))
-	sha := hex.EncodeToString(hasher.Sum(nil))
-	hash := base64.StdEncoding.EncodeToString([]byte(sha))
-	return fmt.Sprintf(".%v", strings.TrimRight(hash, "=="))
+	hash := uint64(5381)
+
+	// Iterate through each character in the input string
+	for _, char := range txt {
+		// hash * 33 + char
+		// Using bit shifting (<<5 + <<0) for multiplication by 33
+		hash = ((hash << 5) + hash) + uint64(char)
+	}
+
+	return fmt.Sprintf("%016x", hash)
 }
