@@ -12,21 +12,22 @@ import (
 const (
 	_ int = iota
 	LOWEST
-	ASSIGN      // <- and = (lowest precedence)
-	RIGHTASSIGN // ->
-	TILDE       // ~
-	OR          // |
-	AND         // &
-	UNARY       // ! and unary - and +
-	COMPARISON  // == >= > < <= !=
-	PLUS        // binary + and -
-	STAR        // * and /
-	CARET       // ^
-	DOLLAR      // $
-	NAMESPACE   // :: and :::
-	SUBSET      // [] [[]]
-	CALL        // ()
-	INDEX       // highest precedence
+	ASSIGN     // <- and = (lowest precedence)
+	TILDE      // ~
+	OR         // |
+	AND        // &
+	UNARY      // ! and unary - and +
+	COMPARISON // == >= > < <= !=
+	PLUS       // binary + and -
+	STAR       // * and /
+	PIPE       // %>% and |>
+	COLON      // :
+	CARET      // ^
+	SUBSET     // [] [[]]
+	DOLLAR     // $
+	NAMESPACE  // :: and :::
+	CALL       // ()
+	INDEX      // highest precedence
 )
 
 var precedences = map[token.ItemType]int{
@@ -73,16 +74,18 @@ var precedences = map[token.ItemType]int{
 	token.ItemLeftParen: CALL, // (
 
 	// Other operators that need specific precedence
-	token.ItemColon: PLUS, // :
-	token.ItemPipe:  OR,   // |>
+	token.ItemPipe:  PIPE, // |>
 	token.ItemInfix: STAR, // %op%
+
+	token.ItemColon: COLON, // :
 
 	token.ItemComma: INDEX,
 }
 
 type (
-	prefixParseFn func() ast.Expression
-	infixParseFn  func(ast.Expression) ast.Expression
+	prefixParseFn  func() ast.Expression
+	postfixParseFn func() ast.Expression
+	infixParseFn   func(ast.Expression) ast.Expression
 )
 
 type Parser struct {
@@ -96,8 +99,9 @@ type Parser struct {
 
 	filePos int
 
-	prefixParseFns map[token.ItemType]prefixParseFn
-	infixParseFns  map[token.ItemType]infixParseFn
+	postfixParseFns map[token.ItemType]postfixParseFn
+	prefixParseFns  map[token.ItemType]prefixParseFn
+	infixParseFns   map[token.ItemType]infixParseFn
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -120,6 +124,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemSingleQuote, p.parseStringLiteral)
 	p.registerPrefix(token.ItemNA, p.parseNA)
 	p.registerPrefix(token.ItemDot, p.parseDot)
+	p.registerPrefix(token.ItemDoubleDot, p.parseDoubleDot)
 	p.registerPrefix(token.ItemNan, p.parseNan)
 	p.registerPrefix(token.ItemNAComplex, p.parseNaComplex)
 	p.registerPrefix(token.ItemNAReal, p.parseNaReal)
@@ -127,11 +132,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemInf, p.parseInf)
 	p.registerPrefix(token.ItemNULL, p.parseNull)
 	p.registerPrefix(token.ItemThreeDot, p.parseElipsis)
-	p.registerPrefix(token.ItemString, p.parseNaString)
 	p.registerPrefix(token.ItemFor, p.parseFor)
 	p.registerPrefix(token.ItemWhile, p.parseWhile)
-	p.registerPrefix(token.ItemRightSquare, p.parseSquare)
-	p.registerPrefix(token.ItemDoubleRightSquare, p.parseSquare)
 	p.registerPrefix(token.ItemMethod, p.parseMethod)
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
@@ -153,6 +155,12 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.ItemLeftSquare, p.parseInfixExpression)
 	p.registerInfix(token.ItemDoubleLeftSquare, p.parseInfixExpression)
 	p.registerInfix(token.ItemLeftParen, p.parseCallExpression)
+
+	p.postfixParseFns = make(map[token.ItemType]postfixParseFn)
+	p.registerPostfix(token.ItemRightSquare, p.parsePostfixSquare)
+	p.registerPostfix(token.ItemDoubleRightSquare, p.parsePostfixSquare)
+
+	return p
 
 	return p
 }
@@ -365,6 +373,13 @@ func (p *Parser) parseElipsis() ast.Expression {
 	return &ast.Keyword{Token: p.curToken, Value: "..."}
 }
 
+func (p *Parser) parseDoubleDot() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "..",
+	}
+}
+
 func (p *Parser) parseDot() ast.Expression {
 	return &ast.Keyword{
 		Token: p.curToken,
@@ -450,7 +465,19 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		leftExp = infix(leftExp)
 	}
 
-	return leftExp
+	postfix := p.postfixParseFns[p.peekToken.Class]
+
+	if postfix == nil {
+		return leftExp
+	}
+
+	p.nextToken()
+
+	return &ast.PostfixExpression{
+		Token:   p.curToken,
+		Left:    leftExp,
+		Postfix: p.curToken.Value,
+	}
 }
 
 func (p *Parser) peekPrecedence() int {
@@ -721,10 +748,20 @@ func (p *Parser) parseMethod() ast.Expression {
 	return exp
 }
 
+func (p *Parser) parsePostfixSquare() ast.Expression {
+	return &ast.Square{
+		Token: p.curToken,
+	}
+}
+
 func (p *Parser) registerPrefix(tokenType token.ItemType, fn prefixParseFn) {
 	p.prefixParseFns[tokenType] = fn
 }
 
 func (p *Parser) registerInfix(tokenType token.ItemType, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerPostfix(tokenType token.ItemType, fn postfixParseFn) {
+	p.postfixParseFns[tokenType] = fn
 }

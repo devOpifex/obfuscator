@@ -115,27 +115,24 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.env = environment.Open(t.env)
 
 	case *ast.InfixExpression:
-		if node.Operator == "in" {
-			t.addCode(" ")
-		}
-
 		if node.Operator == "<-" {
 			node.Operator = "="
 		}
 
-		t.Transpile(node.Left)
-
-		t.addCode(node.Operator)
-
 		if node.Operator == "in" {
-			t.addCode(" ")
+			node.Operator = " in "
 		}
 
+		t.Transpile(node.Left)
+		t.addCode(node.Operator)
 		t.Transpile(node.Right)
 
-		if node.Operator == "[" {
-			t.addCode("]")
-		}
+	case *ast.Square:
+		t.addCode(node.Token.Value)
+
+	case *ast.PostfixExpression:
+		t.Transpile(node.Left)
+		t.addCode(node.Postfix)
 
 	case *ast.IfExpression:
 		t.addCode("if(")
@@ -201,28 +198,22 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 
 func (t *Transpiler) obfuscateMethod(node *ast.Method) {
 	t.addCode(node.Name + "(")
-	for i, a := range node.Arguments {
+	for _, a := range node.Arguments {
 		if a.Name != "" {
 			t.addCode(a.Name + "=")
 		}
 		t.Transpile(a.Value)
-		if i < len(node.Arguments)-1 {
-			t.addCode(",")
-		}
 	}
 	t.addCode(")")
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 	t.addCode(node.Name + "(")
-	for i, a := range node.Arguments {
+	for _, a := range node.Arguments {
 		if a.Name != "" {
 			t.addCode(a.Name + "=")
 		}
 		t.Transpile(a.Value)
-		if i < len(node.Arguments)-1 {
-			t.addCode(",")
-		}
 	}
 	t.addCode(")")
 }

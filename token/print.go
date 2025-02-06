@@ -6,6 +6,7 @@ import (
 
 var ItemName = map[ItemType]string{
 	ItemError:             "error",
+	ItemExport:            "export",
 	ItemIdent:             "identifier",
 	ItemDoubleQuote:       "double quote",
 	ItemSingleQuote:       "single quote",
@@ -74,9 +75,10 @@ var ItemName = map[ItemType]string{
 	ItemTypesList:         "list type",
 	ItemTypesDecl:         "type declaration",
 	ItemBang:              "bang",
-	ItemThreeDot:          "elipsis",
 	ItemMethod:            "method",
 	ItemDot:               "dot",
+	ItemDoubleDot:         "dot dot",
+	ItemThreeDot:          "elipsis",
 }
 
 func (t ItemType) String() string {

@@ -278,6 +278,13 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
+	if r1 == '.' && r2 == '.' {
+		l.next()
+		l.next()
+		l.emit(token.ItemDoubleDot)
+		return lexDefault
+	}
+
 	if r1 == '.' {
 		l.next()
 		l.emit(token.ItemDot)

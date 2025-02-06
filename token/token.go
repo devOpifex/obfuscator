@@ -41,6 +41,9 @@ const (
 	// dot .
 	ItemDot
 
+	// dot dot ..
+	ItemDoubleDot
+
 	// question mark?
 	ItemQuestion
 
