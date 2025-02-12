@@ -161,8 +161,6 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPostfix(token.ItemDoubleRightSquare, p.parsePostfixSquare)
 
 	return p
-
-	return p
 }
 
 func (p *Parser) Run() {
@@ -462,6 +460,12 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 
 		p.nextToken()
 
+		// very hacky, we shouldn't need to do this (I think)
+		//if p.curTokenIs(token.ItemComma) && p.postfixParseFns[p.peekToken.Class] != nil {
+		//	p.debug()
+		//	break
+		//}
+
 		leftExp = infix(leftExp)
 	}
 
@@ -565,6 +569,20 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 		Token:    p.curToken,
 		Operator: operator,
 		Left:     left,
+	}
+
+	// this is a weird hack, we probably shouldn't have to do this
+	// this handles x[1,], x[[x,]], or box::use(. / fl[fn,], )
+	if p.curTokenIs(token.ItemComma) && p.peekTokenIs(token.ItemRightSquare) {
+		return expression
+	}
+
+	if p.curTokenIs(token.ItemComma) && p.peekTokenIs(token.ItemDoubleRightSquare) {
+		return expression
+	}
+
+	if p.curTokenIs(token.ItemComma) && p.peekTokenIs(token.ItemRightParen) {
+		return expression
 	}
 
 	precedence := p.curPrecedence()

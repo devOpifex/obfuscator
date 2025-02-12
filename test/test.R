@@ -1,6 +1,6 @@
 box::use(
   ambiorix[Ambiorix],
-  ./here[get_home, p_rint],
+  . / here[get_home, p_rint],
 )
 
 p_rint("starting...")
