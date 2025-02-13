@@ -178,12 +178,6 @@ func (l *Lexer) Run() {
 			l.emitEOF()
 		}
 	}
-
-	for i := range l.Files[l.filePos].Items {
-		if l.Files[l.filePos].Items[i].Class == token.ItemDollar && l.Files[l.filePos].Items[i+2].Class == token.ItemLeftParen {
-			l.Files[l.filePos].Items[i+1].Class = token.ItemMethod
-		}
-	}
 }
 
 func (l *Lexer) Lex() {

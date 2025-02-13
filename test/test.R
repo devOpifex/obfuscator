@@ -1,12 +1,13 @@
-box::use(
-  ambiorix[Ambiorix],
-  . / here[get_home, p_rint],
-)
+nrows <- seq_along(data[[1]])
 
-p_rint("starting...")
+if (TRUE && !FALSE) {
+  data <- 1
+}
 
-app <- Ambiorix$new(port = 8000L)
+if (TRUE && !"#" %in% names(data)) {
+  data <- 2
+}
 
-app$get("/", get_home)
-
-app$start()
+if(x) {
+  y <- u[-1]
+}

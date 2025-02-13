@@ -78,8 +78,6 @@ var precedences = map[token.ItemType]int{
 	token.ItemInfix: STAR, // %op%
 
 	token.ItemColon: COLON, // :
-
-	token.ItemComma: INDEX,
 }
 
 type (
@@ -134,11 +132,17 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemThreeDot, p.parseElipsis)
 	p.registerPrefix(token.ItemFor, p.parseFor)
 	p.registerPrefix(token.ItemWhile, p.parseWhile)
-	p.registerPrefix(token.ItemMethod, p.parseMethod)
+	p.registerPrefix(token.ItemComma, p.parseComma)
+	p.registerPrefix(token.ItemRightSquare, p.parsePostfixSquare)
+	p.registerPrefix(token.ItemDoubleRightSquare, p.parsePostfixSquare)
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
+	p.registerInfix(token.ItemInfix, p.parseInfixExpression)
+	p.registerInfix(token.ItemOr, p.parseInfixExpression)
+	p.registerInfix(token.ItemDoubleOr, p.parseInfixExpression)
+	p.registerInfix(token.ItemAnd, p.parseInfixExpression)
+	p.registerInfix(token.ItemDoubleAnd, p.parseInfixExpression)
 	p.registerInfix(token.ItemPlus, p.parseInfixExpression)
-	p.registerInfix(token.ItemComma, p.parseInfixExpression)
 	p.registerInfix(token.ItemMinus, p.parseInfixExpression)
 	p.registerInfix(token.ItemDivide, p.parseInfixExpression)
 	p.registerInfix(token.ItemMultiply, p.parseInfixExpression)
@@ -399,6 +403,13 @@ func (p *Parser) parseNan() ast.Expression {
 	}
 }
 
+func (p *Parser) parseComma() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: ",",
+	}
+}
+
 func (p *Parser) parseNaString() ast.Expression {
 	return &ast.Keyword{
 		Token: p.curToken,
@@ -459,12 +470,6 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		}
 
 		p.nextToken()
-
-		// very hacky, we shouldn't need to do this (I think)
-		//if p.curTokenIs(token.ItemComma) && p.postfixParseFns[p.peekToken.Class] != nil {
-		//	p.debug()
-		//	break
-		//}
 
 		leftExp = infix(leftExp)
 	}
@@ -571,20 +576,6 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 		Left:     left,
 	}
 
-	// this is a weird hack, we probably shouldn't have to do this
-	// this handles x[1,], x[[x,]], or box::use(. / fl[fn,], )
-	if p.curTokenIs(token.ItemComma) && p.peekTokenIs(token.ItemRightSquare) {
-		return expression
-	}
-
-	if p.curTokenIs(token.ItemComma) && p.peekTokenIs(token.ItemDoubleRightSquare) {
-		return expression
-	}
-
-	if p.curTokenIs(token.ItemComma) && p.peekTokenIs(token.ItemRightParen) {
-		return expression
-	}
-
 	precedence := p.curPrecedence()
 	p.nextToken()
 	expression.Right = p.parseExpression(precedence)
@@ -651,10 +642,6 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 			block.Statements = append(block.Statements, stmt)
 		}
 
-		if p.curTokenIs(token.ItemRightCurly) {
-			return block
-		}
-
 		p.nextToken()
 	}
 
@@ -700,15 +687,6 @@ func (p *Parser) parseFunctionParameters() []*ast.Argument {
 		if p.peekTokenIs(token.ItemRightParen) {
 			p.nextToken()
 			break
-		}
-
-		// this is strange but it's due to how we parse
-		// e.g.: function(x = c(1,2,3))
-		// the closing ) of the vector never gets processed
-		// AFAIK there may only be a single trailing signif character
-		// so we just skip
-		if !p.peekTokenIs(token.ItemComma) {
-			p.nextToken()
 		}
 
 		p.nextToken() // move past comma

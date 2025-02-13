@@ -75,7 +75,6 @@ var ItemName = map[ItemType]string{
 	ItemTypesList:         "list type",
 	ItemTypesDecl:         "type declaration",
 	ItemBang:              "bang",
-	ItemMethod:            "method",
 	ItemDot:               "dot",
 	ItemDoubleDot:         "dot dot",
 	ItemThreeDot:          "elipsis",

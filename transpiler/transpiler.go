@@ -90,9 +90,10 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.addCode(node.Token.Value + node.Str + node.Token.Value)
 
 	case *ast.PrefixExpression:
-		t.addCode("(" + node.Operator)
+		//t.addCode("(" + node.Operator)
+		t.addCode(node.Operator)
 		t.Transpile(node.Right)
-		t.addCode(")")
+		//t.addCode(")")
 
 	case *ast.For:
 		t.addCode("for(")
@@ -121,6 +122,10 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 		if node.Operator == "in" {
 			node.Operator = " in "
+		}
+
+		if strings.Contains(node.Operator, "%") {
+			node.Operator = " " + node.Operator + " "
 		}
 
 		t.Transpile(node.Left)
@@ -209,11 +214,16 @@ func (t *Transpiler) obfuscateMethod(node *ast.Method) {
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 	t.addCode(node.Name + "(")
-	for _, a := range node.Arguments {
+	for i, a := range node.Arguments {
 		if a.Name != "" {
 			t.addCode(a.Name + "=")
 		}
-		t.Transpile(a.Value)
+		if a.Value != nil {
+			t.Transpile(a.Value)
+			if i < len(node.Arguments)-1 {
+				t.addCode(",")
+			}
+		}
 	}
 	t.addCode(")")
 }
