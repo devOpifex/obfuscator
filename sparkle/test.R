@@ -1,2 +1,2 @@
 # LICENSE SPARKLE TECH
-nrows=seq_along(data[[1]]);if(T&&!F){data=1;};if(T&&!"#" %in% names(data)){data=2;};if(x){y=u[-1];};
+create_event=\(pool,app_id,event){int_names=c("prod","mobile","height","width");for(name in int_names){value=as.integer(event[[name]]);if(identical(value,integer())){value=0L;};event[[name]]=value;};if(identical(app_id,"xyz123")&&in_debug_mode()){x;};event;};

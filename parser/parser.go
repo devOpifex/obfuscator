@@ -325,8 +325,6 @@ func (p *Parser) parseFor() ast.Expression {
 
 	lit.Value = p.parseBlockStatement()
 
-	p.nextToken()
-
 	return lit
 }
 
