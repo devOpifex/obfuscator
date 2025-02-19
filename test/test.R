@@ -1,25 +1,33 @@
-count_num_of_errors <- \(pool, n = 1L) {
+#' @export
+count_events <- \(
+  pool,
+  app_id,
+  n = 1L
+) {
   cur <- as.Date(current_date()) - n + 1L
   prev <- as.Date(current_date()) - n * 2L + 1L
 
   case_cur <- sprintf(
-    "SUM(CASE WHEN event_time >= '%s' AND type = 'error' THEN 1 ELSE 0 END) AS cur_events",
+    "SUM(CASE WHEN event_time >= '%s' THEN 1 ELSE 0 END) AS cur_events",
     cur
   )
 
   case_prev <- sprintf(
-    "SUM(CASE WHEN event_time >= '%s' AND event_time < '%s' AND type = 'error' THEN 1 ELSE 0 END) AS prev_events",
+    "SUM(CASE WHEN event_time >= '%s' AND event_time < '%s' THEN 1 ELSE 0 END) AS prev_events",
     prev, cur
   )
 
   case <- paste(case_cur, ", ", case_prev)
 
-  query <- paste("SELECT", case, "FROM events")
+  query <- paste("SELECT", case, "FROM events WHERE app_id = ?") |>
+    parameterize_query()
+  params <- list(app_id)
 
   conn <- checkout_conn(pool = pool)
   on.exit(poolReturn(conn))
 
   res <- dbSendQuery(conn = conn, statement = query)
+  dbBind(res, params = params)
   found <- dbFetch(res)
   dbClearResult(res)
 
@@ -33,30 +41,16 @@ count_num_of_errors <- \(pool, n = 1L) {
     "%"
   )
 
+  # if the number of previous events is zero, then percentage change
+  # cannot be determined due to division by zero, so a dash would do:
   if (identical(found$prev_events, 0L)) {
     pct_change <- "-"
   }
 
-  status <- if (found$cur_events >= found$prev_events) {"increase"} else {"decrease"}
+  status <- if (found$cur_events >= found$prev_events) "increase" else "decrease"
 
   found$pct_change <- pct_change
   found$status <- status
-
-  # error rate
-  all_cur_events <- count_events(pool = pool, n = n)[["cur_events"]]
-  error_rate <- paste0(
-    round(
-      x = found$cur_events / all_cur_events * 100,
-      digits = 1L
-    ),
-    "%"
-  )
-
-  if (identical(all_cur_events, 0L)) {
-    error_rate <- "-"
-  }
-
-  found$error_rate <- error_rate
 
   found
 }
