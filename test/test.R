@@ -47,7 +47,7 @@ count_events <- \(
     pct_change <- "-"
   }
 
-  status <- if (found$cur_events >= found$prev_events) "increase" else "decrease"
+  status <- if (found$cur_events >= found$prev_events) {"increase"} else {"decrease"}
 
   found$pct_change <- pct_change
   found$status <- status
