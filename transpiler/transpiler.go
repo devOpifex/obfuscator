@@ -55,10 +55,6 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.addCode("NULL")
 
 	case *ast.Keyword:
-		// super hacky: avoids x[1,] transpiling to x[1;,]
-		if node.Value == "," && t.code[len(t.code)-1] == ";" {
-			t.code = t.code[:len(t.code)-1]
-		}
 		t.addCode(node.Value)
 
 	case *ast.ExportStatement:
@@ -233,7 +229,17 @@ func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 }
 
 func (t *Transpiler) GetCode() string {
-	return strings.Join(t.code, "")
+	return t.cleanCode()
+}
+
+// this is bad but I have no other fix right now
+func (t *Transpiler) cleanCode() string {
+	code := strings.Join(t.code, "")
+	code = strings.ReplaceAll(code, ";,", ",")
+	code = strings.ReplaceAll(code, ",;", ",")
+	code = strings.ReplaceAll(code, "(;", "(")
+	code = strings.ReplaceAll(code, ";)", ")")
+	return code
 }
 
 func (t *Transpiler) addCode(code string) {
