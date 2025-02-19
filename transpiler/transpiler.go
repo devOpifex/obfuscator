@@ -69,9 +69,6 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			t.addCode(";")
 		}
 
-	case *ast.Method:
-		t.obfuscateMethod(node)
-
 	case *ast.Identifier:
 		t.addCode(node.Value)
 		return node
@@ -204,17 +201,6 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 	}
 
 	return node
-}
-
-func (t *Transpiler) obfuscateMethod(node *ast.Method) {
-	t.addCode(node.Name + "(")
-	for _, a := range node.Arguments {
-		if a.Name != "" {
-			t.addCode(a.Name + "=")
-		}
-		t.Transpile(a.Value)
-	}
-	t.addCode(")")
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {

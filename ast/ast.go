@@ -338,8 +338,8 @@ func (pe *PostfixExpression) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("(")
-	out.WriteString(pe.Left.String())
-	out.WriteString(pe.Postfix)
+	out.WriteString(pe.Operator)
+	out.WriteString(pe.Postfix.String())
 	out.WriteString(")")
 
 	return out.String()
@@ -466,28 +466,6 @@ func (ce *CallExpression) String() string {
 	out.WriteString(ce.Name)
 	out.WriteString("(")
 	for _, a := range ce.Arguments {
-		out.WriteString(a.Name)
-	}
-	out.WriteString(")")
-
-	return out.String()
-}
-
-type Method struct {
-	Token     token.Item // The '(' token
-	Name      string
-	Arguments []*Argument
-}
-
-func (m *Method) Item() token.Item     { return m.Token }
-func (m *Method) expressionNode()      {}
-func (m *Method) TokenLiteral() string { return m.Token.Value }
-func (m *Method) String() string {
-	var out bytes.Buffer
-
-	out.WriteString(m.Name)
-	out.WriteString("(")
-	for _, a := range m.Arguments {
 		out.WriteString(a.Name)
 	}
 	out.WriteString(")")
