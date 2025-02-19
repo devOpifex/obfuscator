@@ -1,2 +1,2 @@
 # LICENSE SPARKLE TECH
-create_event=\(pool,app_id,event){int_names=c("prod","mobile","height","width");for(name in int_names){value=as.integer(event[[name]]);if(identical(value,integer())){value=0L;};event[[name]]=value;};if(identical(app_id,"xyz123")&&in_debug_mode()){x;};event;};
+count_events_per_day=\(pool,n=7L){x=(;1+2;)*3;found[row_idx,];};

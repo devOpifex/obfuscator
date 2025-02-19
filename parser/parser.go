@@ -135,6 +135,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemComma, p.parseComma)
 	p.registerPrefix(token.ItemRightSquare, p.parsePostfixSquare)
 	p.registerPrefix(token.ItemDoubleRightSquare, p.parsePostfixSquare)
+	p.registerPrefix(token.ItemLeftParen, p.parseLeftParen)
+	p.registerPrefix(token.ItemRightParen, p.parseRightParen)
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
 	p.registerInfix(token.ItemInfix, p.parseInfixExpression)
@@ -151,6 +153,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.ItemNotEqual, p.parseInfixExpression)
 	p.registerInfix(token.ItemLessThan, p.parseInfixExpression)
 	p.registerInfix(token.ItemGreaterThan, p.parseInfixExpression)
+	p.registerInfix(token.ItemGreaterOrEqual, p.parseInfixExpression)
 	p.registerInfix(token.ItemPipe, p.parseInfixExpression)
 	p.registerInfix(token.ItemDollar, p.parseInfixExpression)
 	p.registerInfix(token.ItemColon, p.parseInfixExpression)
@@ -405,6 +408,20 @@ func (p *Parser) parseComma() ast.Expression {
 	return &ast.Keyword{
 		Token: p.curToken,
 		Value: ",",
+	}
+}
+
+func (p *Parser) parseLeftParen() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: "(",
+	}
+}
+
+func (p *Parser) parseRightParen() ast.Expression {
+	return &ast.Keyword{
+		Token: p.curToken,
+		Value: ")",
 	}
 }
 

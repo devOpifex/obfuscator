@@ -55,6 +55,10 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.addCode("NULL")
 
 	case *ast.Keyword:
+		// super hacky: avoids x[1,] transpiling to x[1;,]
+		if node.Value == "," && t.code[len(t.code)-1] == ";" {
+			t.code = t.code[:len(t.code)-1]
+		}
 		t.addCode(node.Value)
 
 	case *ast.ExportStatement:
