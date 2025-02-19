@@ -63,6 +63,9 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
 			t.Transpile(s)
+			if _, ok := s.(*ast.CommentStatement); ok {
+				continue
+			}
 			t.addCode(";")
 		}
 
@@ -76,9 +79,11 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 	case *ast.Boolean:
 		if node.Value {
 			t.addCode("T")
-		} else {
-			t.addCode("F")
+			return node
 		}
+
+		t.addCode("F")
+		return node
 
 	case *ast.IntegerLiteral:
 		t.addCode(node.Value)
@@ -235,10 +240,11 @@ func (t *Transpiler) GetCode() string {
 // this is bad but I have no other fix right now
 func (t *Transpiler) cleanCode() string {
 	code := strings.Join(t.code, "")
-	code = strings.ReplaceAll(code, ";,", ",")
-	code = strings.ReplaceAll(code, ",;", ",")
 	code = strings.ReplaceAll(code, "(;", "(")
 	code = strings.ReplaceAll(code, ";)", ")")
+	code = strings.ReplaceAll(code, ";,", ",")
+	code = strings.ReplaceAll(code, ",;", ",")
+	code = strings.ReplaceAll(code, "(,", "(")
 	return code
 }
 
