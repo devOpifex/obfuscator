@@ -59,22 +59,18 @@ func (e *Environment) SetVariable(name string) {
 	e.variables = append(e.variables, name)
 }
 
-func (e *Environment) GetFunction(name string, outer bool) bool {
+func (e *Environment) GetFunction(name string) bool {
 	for _, f := range e.functions {
 		if f == name {
 			return true
 		}
 	}
 
-	if e.outer != nil && outer {
-		return e.outer.GetFunction(name, outer)
-	}
-
 	return false
 }
 
 func (e *Environment) SetFunction(name string) {
-	if e.GetFunction(name, true) {
+	if e.GetFunction(name) {
 		return
 	}
 

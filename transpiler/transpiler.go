@@ -70,7 +70,15 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 	case *ast.Identifier:
-		t.addCode(environment.Mask(node.Value))
+		ok := t.env.GetVariable(node.Value, true)
+		if ok {
+			t.addCode(environment.Mask(node.Value))
+		}
+
+		if !ok {
+			t.addCode(node.Value)
+		}
+
 		return node
 
 	case *ast.Boolean:
@@ -126,13 +134,19 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			node.Operator = " in "
 		}
 
+		// it's a pipe e.g.: %>%
 		if strings.Contains(node.Operator, "%") {
 			node.Operator = " " + node.Operator + " "
+		}
+
+		if _, ok := node.Left.(*ast.Identifier); ok && node.Operator == "=" {
+			t.env.SetVariable(node.Left.String())
 		}
 
 		t.Transpile(node.Left)
 		t.addCode(node.Operator)
 		t.Transpile(node.Right)
+		return node.Right
 
 	case *ast.Square:
 		t.addCode(node.Token.Value)
@@ -159,16 +173,16 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 	case *ast.FunctionLiteral:
-		t.env = environment.Enclose(t.env)
-
 		if node.Name != "" {
 			t.env.SetFunction(node.Name)
 			t.addCode(environment.Mask(node.Name) + "=")
 		}
 
+		t.env = environment.Enclose(t.env)
 		t.addCode("\\(")
 		for i, p := range node.Parameters {
 			if p.Name != "" {
+				t.env.SetVariable(p.Name)
 				t.addCode(environment.Mask(p.Name))
 			}
 			if p.Value != nil {
@@ -212,7 +226,7 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
-	ok := t.env.GetFunction(node.Name, true)
+	ok := t.env.GetFunction(node.Name)
 	if ok {
 		t.addCode(environment.Mask(node.Name) + "(")
 	}
