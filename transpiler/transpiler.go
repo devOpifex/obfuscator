@@ -70,7 +70,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 	case *ast.Identifier:
-		t.addCode(node.Value)
+		t.addCode(environment.Mask(node.Value))
 		return node
 
 	case *ast.Boolean:
@@ -99,7 +99,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 	case *ast.For:
 		t.addCode("for(")
-		t.addCode(node.Name)
+		t.addCode(environment.Mask(node.Name))
 		t.addCode(" in ")
 		t.Transpile(node.Vector)
 		t.addCode("){")
@@ -161,10 +161,15 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 	case *ast.FunctionLiteral:
 		t.env = environment.Enclose(t.env)
 
+		if node.Name != "" {
+			t.env.SetFunction(node.Name)
+			t.addCode(environment.Mask(node.Name) + "=")
+		}
+
 		t.addCode("\\(")
 		for i, p := range node.Parameters {
 			if p.Name != "" {
-				t.addCode(p.Name)
+				t.addCode(environment.Mask(p.Name))
 			}
 			if p.Value != nil {
 				t.addCode("=")
@@ -207,11 +212,24 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
-	t.addCode(node.Name + "(")
+	ok := t.env.GetFunction(node.Name, true)
+	if ok {
+		t.addCode(environment.Mask(node.Name) + "(")
+	}
+
+	if !ok {
+		t.addCode(node.Name + "(")
+	}
+
 	for i, a := range node.Arguments {
-		if a.Name != "" {
+		if a.Name != "" && ok {
+			t.addCode(environment.Mask(a.Name) + "=")
+		}
+
+		if a.Name != "" && !ok {
 			t.addCode(a.Name + "=")
 		}
+
 		if a.Value != nil {
 			t.Transpile(a.Value)
 			if i < len(node.Arguments)-1 {

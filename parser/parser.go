@@ -583,6 +583,10 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	if p.curTokenIs(token.ItemAssign) && p.peekTokenIs(token.ItemFunction) {
+		return p.parseNamedFunctionLiteral(left)
+	}
+
 	operator := p.curToken.Value
 
 	expression := &ast.InfixExpression{
@@ -755,6 +759,28 @@ func (p *Parser) parseFunctionArguments() []*ast.Argument {
 	}
 
 	return params
+}
+
+func (p *Parser) parseNamedFunctionLiteral(name ast.Expression) ast.Expression {
+	lit := &ast.FunctionLiteral{Token: p.curToken, Name: name.String()}
+
+	if !p.expectPeek(token.ItemFunction) {
+		return nil
+	}
+
+	if !p.expectPeek(token.ItemLeftParen) {
+		return nil
+	}
+
+	lit.Parameters = p.parseFunctionArguments()
+
+	if !p.expectPeek(token.ItemLeftCurly) {
+		return nil
+	}
+
+	lit.Body = p.parseBlockStatement()
+
+	return lit
 }
 
 func (p *Parser) parseFunctionLiteral() ast.Expression {

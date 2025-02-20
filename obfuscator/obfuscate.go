@@ -65,16 +65,6 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 
 	case *ast.InfixExpression:
 		o.Obfuscate(node.Left)
-
-		if node.Operator == "=" || node.Operator == "<-" {
-			switch n := node.Left.(type) {
-			case *ast.Identifier:
-				o.env.SetVariable(n.Value, environment.Variable{
-					Name: n.Value,
-				})
-			}
-		}
-
 		o.Obfuscate(node.Right)
 		return node.Right
 

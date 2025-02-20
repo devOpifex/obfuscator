@@ -11,9 +11,9 @@ import (
 var KEY string = "DEFAULT"
 
 type Environment struct {
-	variables map[string]Variable
-	functions map[string]Function
-	arguments map[string]Arg
+	variables []string
+	functions []string
+	arguments []string
 	outer     *Environment
 }
 
@@ -32,76 +32,80 @@ func SetKey(key string) {
 }
 
 func New() *Environment {
-	a := make(map[string]Arg)
-	v := make(map[string]Variable)
-	f := make(map[string]Function)
-
 	return &Environment{
-		functions: f,
-		variables: v,
-		arguments: a,
-		outer:     nil,
+		outer: nil,
 	}
 }
 
-func (e *Environment) GetVariable(name string, outer bool) (Variable, bool) {
-	obj, ok := e.variables[name]
-	if !ok && e.outer != nil && outer {
-		obj, ok = e.outer.GetVariable(name, outer)
-	}
-	return obj, ok
-}
-
-func (e *Environment) SetVariable(name string, val Variable) Variable {
-	_, ok := e.GetVariable(name, false)
-	if ok {
-		return val
+func (e *Environment) GetVariable(name string, outer bool) bool {
+	for _, v := range e.variables {
+		if v == name {
+			return true
+		}
 	}
 
-	val.Obfuscated = mask(name)
-	e.variables[name] = val
-	return val
-}
-
-func (e *Environment) GetFunction(name string, outer bool) (Function, bool) {
-	obj, ok := e.functions[name]
-	if !ok && e.outer != nil && outer {
-		obj, ok = e.outer.GetFunction(name, outer)
-	}
-	return obj, ok
-}
-
-func (e *Environment) SetFunction(name string, val Function) Function {
-	_, ok := e.GetFunction(name, true)
-	if ok {
-		return val
+	if e.outer != nil && outer {
+		return e.outer.GetVariable(name, outer)
 	}
 
-	val.Obfuscated = mask(name)
-	e.functions[name] = val
-	return val
+	return false
 }
 
-func (e *Environment) GetArgument(name string, outer bool) (Function, bool) {
-	obj, ok := e.functions[name]
-	if !ok && e.outer != nil && outer {
-		obj, ok = e.outer.GetArgument(name, outer)
-	}
-	return obj, ok
-}
-
-func (e *Environment) SetArgument(name string, val Arg) Arg {
-	_, ok := e.GetFunction(name, true)
-	if ok {
-		return val
+func (e *Environment) SetVariable(name string) {
+	if e.GetVariable(name, false) {
+		return
 	}
 
-	val.Obfuscated = mask(name)
-	e.arguments[name] = val
-	return val
+	e.variables = append(e.variables, name)
 }
 
-func mask(txt string) string {
+func (e *Environment) GetFunction(name string, outer bool) bool {
+	for _, f := range e.functions {
+		if f == name {
+			return true
+		}
+	}
+
+	if e.outer != nil && outer {
+		return e.outer.GetFunction(name, outer)
+	}
+
+	return false
+}
+
+func (e *Environment) SetFunction(name string) {
+	if e.GetFunction(name, true) {
+		return
+	}
+
+	e.functions = append(e.functions, name)
+}
+
+func (e *Environment) GetArgument(name string, outer bool) bool {
+	for _, a := range e.arguments {
+		if a == name {
+			return true
+		}
+	}
+
+	if e.outer != nil && outer {
+		return e.outer.GetArgument(name, outer)
+	}
+
+	return false
+}
+
+func (e *Environment) SetArgument(name string) string {
+	if e.GetArgument(name, true) {
+		return name
+	}
+
+	obfuscated := Mask(name)
+	e.arguments = append(e.arguments, obfuscated)
+	return obfuscated
+}
+
+func Mask(txt string) string {
 	hasher := sha1.New()
 	hasher.Write([]byte(txt + KEY))
 	sha := hex.EncodeToString(hasher.Sum(nil))

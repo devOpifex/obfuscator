@@ -402,6 +402,7 @@ func (ie *IfExpression) String() string {
 
 type FunctionLiteral struct {
 	Token      token.Item // The 'function' token
+	Name       string
 	Parameters []*Argument
 	Body       *BlockStatement
 }
@@ -411,6 +412,10 @@ func (fl *FunctionLiteral) expressionNode()      {}
 func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Value }
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
+
+	if fl.Name != "" {
+		out.WriteString(fl.Name + "=")
+	}
 
 	out.WriteString("\\")
 	out.WriteString("(")

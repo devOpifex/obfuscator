@@ -146,7 +146,7 @@ const (
 	ItemNext
 	ItemIn
 
-	// func
+	// function
 	ItemFunction
 	ItemBackslash
 
