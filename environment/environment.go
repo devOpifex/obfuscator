@@ -1,12 +1,19 @@
 package environment
 
-import "fmt"
+import (
+	"crypto/sha1"
+	"encoding/base64"
+	"encoding/hex"
+	"fmt"
+	"strings"
+)
 
 var KEY string = "DEFAULT"
 
 type Environment struct {
 	variables map[string]Variable
 	functions map[string]Function
+	arguments map[string]Arg
 	outer     *Environment
 }
 
@@ -25,12 +32,14 @@ func SetKey(key string) {
 }
 
 func New() *Environment {
+	a := make(map[string]Arg)
 	v := make(map[string]Variable)
 	f := make(map[string]Function)
 
 	return &Environment{
 		functions: f,
 		variables: v,
+		arguments: a,
 		outer:     nil,
 	}
 }
@@ -73,15 +82,29 @@ func (e *Environment) SetFunction(name string, val Function) Function {
 	return val
 }
 
-func mask(txt string) string {
-	hash := uint64(5381)
+func (e *Environment) GetArgument(name string, outer bool) (Function, bool) {
+	obj, ok := e.functions[name]
+	if !ok && e.outer != nil && outer {
+		obj, ok = e.outer.GetArgument(name, outer)
+	}
+	return obj, ok
+}
 
-	// Iterate through each character in the input string
-	for _, char := range txt {
-		// hash * 33 + char
-		// Using bit shifting (<<5 + <<0) for multiplication by 33
-		hash = ((hash << 5) + hash) + uint64(char)
+func (e *Environment) SetArgument(name string, val Arg) Arg {
+	_, ok := e.GetFunction(name, true)
+	if ok {
+		return val
 	}
 
-	return fmt.Sprintf("%016x", hash)
+	val.Obfuscated = mask(name)
+	e.arguments[name] = val
+	return val
+}
+
+func mask(txt string) string {
+	hasher := sha1.New()
+	hasher.Write([]byte(txt + KEY))
+	sha := hex.EncodeToString(hasher.Sum(nil))
+	hash := base64.StdEncoding.EncodeToString([]byte(sha))
+	return fmt.Sprintf("`%v`", strings.TrimRight(hash, "=="))
 }

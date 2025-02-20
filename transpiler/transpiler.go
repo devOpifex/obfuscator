@@ -164,9 +164,12 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.addCode("\\(")
 		for i, p := range node.Parameters {
 			if p.Name != "" {
-				t.addCode(p.Name + "=")
+				t.addCode(p.Name)
 			}
-			t.Transpile(p.Value)
+			if p.Value != nil {
+				t.addCode("=")
+				t.Transpile(p.Value)
+			}
 			if i < len(node.Parameters)-1 {
 				t.addCode(",")
 			}

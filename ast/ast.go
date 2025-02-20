@@ -338,8 +338,8 @@ func (pe *PostfixExpression) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("(")
-	out.WriteString(pe.Operator)
-	out.WriteString(pe.Postfix.String())
+	out.WriteString(pe.Left.String())
+	out.WriteString(pe.Postfix)
 	out.WriteString(")")
 
 	return out.String()

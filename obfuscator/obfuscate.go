@@ -101,9 +101,6 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 
 	case *ast.CallExpression:
 		o.obfuscateCallExpression(node)
-
-	case *ast.Method:
-		o.obfuscateMethod(node)
 	}
 
 	return node
@@ -118,12 +115,6 @@ func (o *Obfuscator) obfuscateProgram(program *ast.Program) ast.Node {
 }
 
 func (o *Obfuscator) obfuscateCallExpression(node *ast.CallExpression) {
-	for _, a := range node.Arguments {
-		o.Obfuscate(a.Value)
-	}
-}
-
-func (o *Obfuscator) obfuscateMethod(node *ast.Method) {
 	for _, a := range node.Arguments {
 		o.Obfuscate(a.Value)
 	}

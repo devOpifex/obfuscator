@@ -710,6 +710,53 @@ func (p *Parser) parseFunctionParameters() []*ast.Argument {
 	return params
 }
 
+func (p *Parser) parseFunctionArguments() []*ast.Argument {
+	var params []*ast.Argument
+
+	// Handle empty parameter list
+	if p.peekTokenIs(token.ItemRightParen) {
+		p.nextToken()
+		return params
+	}
+
+	p.nextToken() // move past opening paren
+
+	for !p.curTokenIs(token.ItemRightParen) && !p.curTokenIs(token.ItemEOF) {
+		if p.curTokenIs(token.ItemComma) {
+			p.nextToken()
+			continue
+		}
+
+		arg := &ast.Argument{
+			Token: p.curToken,
+		}
+
+		// Check for named parameter (identifier followed by =)
+		if p.curTokenIs(token.ItemIdent) && p.peekTokenIs(token.ItemAssign) {
+			name := p.curToken.Value
+			p.nextToken() // move past identifier
+			p.nextToken() // move past =
+			arg.Name = name
+			arg.Value = p.parseExpression(LOWEST)
+		} else {
+			// Unnamed parameter
+			arg.Name = p.curToken.Value
+		}
+
+		params = append(params, arg)
+
+		// Break if we're at the end
+		if p.peekTokenIs(token.ItemRightParen) {
+			p.nextToken()
+			break
+		}
+
+		p.nextToken() // move past comma
+	}
+
+	return params
+}
+
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 
@@ -717,7 +764,7 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		return nil
 	}
 
-	lit.Parameters = p.parseFunctionParameters()
+	lit.Parameters = p.parseFunctionArguments()
 
 	if !p.expectPeek(token.ItemLeftCurly) {
 		return nil
@@ -737,19 +784,6 @@ func (p *Parser) parseSquare() ast.Expression {
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Name: function.Item().Value}
 
-	exp.Arguments = p.parseFunctionParameters()
-
-	if !p.curTokenIs(token.ItemRightParen) {
-		return nil
-	}
-
-	return exp
-}
-
-func (p *Parser) parseMethod() ast.Expression {
-	exp := &ast.Method{Token: p.curToken, Name: p.curToken.Value}
-
-	p.nextToken()
 	exp.Arguments = p.parseFunctionParameters()
 
 	if !p.curTokenIs(token.ItemRightParen) {
