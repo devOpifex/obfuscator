@@ -1,8 +1,6 @@
 library(ambiorix)
 
-foo <- function(x) {
-  return(x + 1)
-}
+source("./test2.R")
 
 foo(41)
 

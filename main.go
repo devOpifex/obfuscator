@@ -52,6 +52,7 @@ func main() {
 
 	o := obfuscator.New(env, p.Files())
 	o.Run()
+	o.Run()
 
 	t := transpiler.New(env, p.Files())
 	t.Run()

@@ -77,30 +77,6 @@ func (e *Environment) SetFunction(name string) {
 	e.functions = append(e.functions, name)
 }
 
-func (e *Environment) GetArgument(name string, outer bool) bool {
-	for _, a := range e.arguments {
-		if a == name {
-			return true
-		}
-	}
-
-	if e.outer != nil && outer {
-		return e.outer.GetArgument(name, outer)
-	}
-
-	return false
-}
-
-func (e *Environment) SetArgument(name string) string {
-	if e.GetArgument(name, true) {
-		return name
-	}
-
-	obfuscated := Mask(name)
-	e.arguments = append(e.arguments, obfuscated)
-	return obfuscated
-}
-
 func Mask(txt string) string {
 	hasher := sha1.New()
 	hasher.Write([]byte(txt + KEY))

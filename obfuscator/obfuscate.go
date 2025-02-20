@@ -51,36 +51,19 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 	case *ast.PrefixExpression:
 		o.Obfuscate(node.Right)
 
-	case *ast.For:
-		o.Obfuscate(node.Vector)
-		o.env = environment.Enclose(o.env)
-		o.Obfuscate(node.Value)
-		o.env = environment.Open(o.env)
-
-	case *ast.While:
-		o.Obfuscate(node.Statement)
-		o.env = environment.Enclose(o.env)
-		o.Obfuscate(node.Value)
-		o.env = environment.Open(o.env)
-
 	case *ast.InfixExpression:
 		o.Obfuscate(node.Left)
+		if _, ok := node.Left.(*ast.Identifier); ok && node.Operator == "=" {
+			o.env.SetVariable(node.Left.String())
+		}
 		o.Obfuscate(node.Right)
 		return node.Right
 
-	case *ast.IfExpression:
-		o.Obfuscate(node.Condition)
-		o.env = environment.Enclose(o.env)
-		o.Obfuscate(node.Consequence)
-		o.env = environment.Open(o.env)
-
-		if node.Alternative != nil {
-			o.env = environment.Enclose(o.env)
-			o.Obfuscate(node.Alternative)
-			o.env = environment.Open(o.env)
+	case *ast.FunctionLiteral:
+		if node.Name != "" {
+			o.env.SetFunction(node.Name)
 		}
 
-	case *ast.FunctionLiteral:
 		o.env = environment.Enclose(o.env)
 
 		if node.Body != nil {
@@ -90,7 +73,7 @@ func (o *Obfuscator) Obfuscate(node ast.Node) ast.Node {
 		o.env = environment.Open(o.env)
 
 	case *ast.CallExpression:
-		o.obfuscateCallExpression(node)
+		return node
 	}
 
 	return node
