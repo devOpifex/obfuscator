@@ -305,6 +305,22 @@ func (sl *StringLiteral) String() string {
 	return out.String()
 }
 
+type BacktickLiteral struct {
+	Token token.Item
+	Value string
+}
+
+func (b *BacktickLiteral) Item() token.Item     { return b.Token }
+func (b *BacktickLiteral) expressionNode()      {}
+func (b *BacktickLiteral) TokenLiteral() string { return b.Token.Value }
+func (b *BacktickLiteral) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("`" + b.Value + "`")
+
+	return out.String()
+}
+
 type PrefixExpression struct {
 	Token    token.Item // The prefix token, e.g. !
 	Operator string

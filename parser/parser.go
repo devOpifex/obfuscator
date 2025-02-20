@@ -120,6 +120,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemBackslash, p.parseFunctionLiteral)
 	p.registerPrefix(token.ItemDoubleQuote, p.parseStringLiteral)
 	p.registerPrefix(token.ItemSingleQuote, p.parseStringLiteral)
+	p.registerPrefix(token.ItemBacktick, p.parseBacktickLiteral)
 	p.registerPrefix(token.ItemNA, p.parseNA)
 	p.registerPrefix(token.ItemDot, p.parseDot)
 	p.registerPrefix(token.ItemDoubleDot, p.parseDoubleDot)
@@ -569,6 +570,26 @@ func (p *Parser) parseStringLiteral() ast.Expression {
 	return str
 }
 
+func (p *Parser) parseBacktickLiteral() ast.Expression {
+	bt := &ast.BacktickLiteral{
+		Token: p.curToken,
+	}
+
+	// it's an empty backtick ""
+	if p.peekTokenIs(token.ItemBacktick) {
+		p.nextToken()
+		return bt
+	}
+
+	p.expectPeek(token.ItemIdent)
+
+	bt.Value = p.curToken.Value
+
+	p.nextToken()
+
+	return bt
+}
+
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	expression := &ast.PrefixExpression{
 		Token:    p.curToken,
@@ -583,7 +604,7 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
-	if p.curTokenIs(token.ItemAssign) && p.peekTokenIs(token.ItemFunction) {
+	if p.curTokenIs(token.ItemAssign) && (p.peekTokenIs(token.ItemFunction) || p.peekTokenIs(token.ItemBackslash)) {
 		return p.parseNamedFunctionLiteral(left)
 	}
 
@@ -764,7 +785,7 @@ func (p *Parser) parseFunctionArguments() []*ast.Argument {
 func (p *Parser) parseNamedFunctionLiteral(name ast.Expression) ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken, Name: name.String()}
 
-	if !p.expectPeek(token.ItemFunction) {
+	if !(p.expectPeek(token.ItemFunction) || p.expectPeek(token.ItemBackslash)) {
 		return nil
 	}
 

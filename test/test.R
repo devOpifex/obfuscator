@@ -1,8 +1,9 @@
-library(ambiorix)
+box::use(
+  ambiorix[Ambiorix],
+  . / test2[foo, `%||%`],
+)
 
-source("./test2.R")
-
-foo(41)
+NULL %||% foo(41)
 
 app <- Ambiorix$new(port = 8000L)
 

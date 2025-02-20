@@ -10,9 +10,11 @@ import (
 )
 
 type Transpiler struct {
-	code []string
-	env  *environment.Environment
-	file lexer.File
+	code          []string
+	env           *environment.Environment
+	file          lexer.File
+	boxUse        bool
+	lastNamespace string
 }
 
 type Transpilers []*Transpiler
@@ -70,14 +72,17 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 	case *ast.Identifier:
-		ok := t.env.GetVariable(node.Value, true)
-		if ok {
+		if t.env.GetVariable(node.Value, true) {
 			t.addCode(environment.Mask(node.Value))
+			return node
 		}
 
-		if !ok {
-			t.addCode(node.Value)
+		if t.env.GetFunction(node.Value) {
+			t.addCode(environment.Mask(node.Value))
+			return node
 		}
+
+		t.addCode(node.Value)
 
 		return node
 
@@ -88,6 +93,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 		t.addCode("F")
+
 		return node
 
 	case *ast.IntegerLiteral:
@@ -99,28 +105,30 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 	case *ast.StringLiteral:
 		t.addCode(node.Token.Value + node.Str + node.Token.Value)
 
+	case *ast.BacktickLiteral:
+		t.addCode("`" + node.Value + "`")
+
 	case *ast.PrefixExpression:
-		//t.addCode("(" + node.Operator)
 		t.addCode(node.Operator)
 		t.Transpile(node.Right)
-		//t.addCode(")")
 
 	case *ast.For:
 		t.addCode("for(")
+		t.env = environment.Enclose(t.env)
+		t.env.SetVariable(node.Name)
 		t.addCode(environment.Mask(node.Name))
 		t.addCode(" in ")
 		t.Transpile(node.Vector)
 		t.addCode("){")
-		t.env = environment.Enclose(t.env)
 		t.Transpile(node.Value)
 		t.addCode("}")
 		t.env = environment.Open(t.env)
 
 	case *ast.While:
+		t.env = environment.Enclose(t.env)
 		t.addCode("while(")
 		t.Transpile(node.Statement)
 		t.addCode("){")
-		t.env = environment.Enclose(t.env)
 		t.Transpile(node.Value)
 		t.addCode("}")
 		t.env = environment.Open(t.env)
@@ -143,7 +151,16 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			t.env.SetVariable(node.Left.String())
 		}
 
-		t.Transpile(node.Left)
+		if _, ok := node.Left.(*ast.Identifier); ok && node.Operator == "::" {
+			t.lastNamespace = node.Left.String()
+		}
+
+		if _, ok := node.Left.(*ast.Identifier); ok && node.Operator == "[" && t.boxUse {
+			t.addCode(node.Left.String())
+		} else {
+			t.Transpile(node.Left)
+		}
+
 		t.addCode(node.Operator)
 		t.Transpile(node.Right)
 		return node.Right
@@ -173,9 +190,15 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 	case *ast.FunctionLiteral:
-		if node.Name != "" {
+		// these 2 branches are for fecking InfixExpression
+		// `%>%` <- function(lhs, rhs) { #... }
+		if node.Name != "" && !strings.Contains(node.Name, "%") {
 			t.env.SetFunction(node.Name)
 			t.addCode(environment.Mask(node.Name) + "=")
+		}
+
+		if strings.Contains(node.Name, "%") {
+			t.addCode(node.Name + "=")
 		}
 
 		t.env = environment.Enclose(t.env)
@@ -226,6 +249,11 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 }
 
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
+	// calls to box::use
+	if t.lastNamespace == "box" && node.Name == "use" {
+		t.inBoxUse()
+	}
+
 	ok := t.env.GetFunction(node.Name)
 	if ok {
 		t.addCode(environment.Mask(node.Name) + "(")
@@ -251,6 +279,7 @@ func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 			}
 		}
 	}
+	t.outBoxUse()
 	t.addCode(")")
 }
 
@@ -271,4 +300,12 @@ func (t *Transpiler) cleanCode() string {
 
 func (t *Transpiler) addCode(code string) {
 	t.code = append(t.code, code)
+}
+
+func (t *Transpiler) inBoxUse() {
+	t.boxUse = true
+}
+
+func (t *Transpiler) outBoxUse() {
+	t.boxUse = false
 }

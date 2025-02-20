@@ -66,6 +66,10 @@ func (e *Environment) GetFunction(name string) bool {
 		}
 	}
 
+	if e.outer != nil {
+		return e.outer.GetFunction(name)
+	}
+
 	return false
 }
 
@@ -82,5 +86,5 @@ func Mask(txt string) string {
 	hasher.Write([]byte(txt + KEY))
 	sha := hex.EncodeToString(hasher.Sum(nil))
 	hash := base64.StdEncoding.EncodeToString([]byte(sha))
-	return fmt.Sprintf("`%v`", strings.TrimRight(hash, "=="))
+	return fmt.Sprintf("%v", strings.TrimRight(hash, "=="))
 }

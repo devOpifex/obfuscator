@@ -201,6 +201,8 @@ func lexDefault(l *Lexer) stateFn {
 	}
 
 	if r1 == '`' {
+		l.next()
+		l.emit(token.ItemBacktick)
 		return lexBacktick(l)
 	}
 
@@ -579,11 +581,11 @@ func lexComment(l *Lexer) stateFn {
 }
 
 func lexBacktick(l *Lexer) func(l *Lexer) stateFn {
-	l.next()
 	r := l.peek(1)
 	for r != '`' && r != token.EOF {
 		r = l.next()
 	}
+	l.backup()
 
 	if r == token.EOF {
 		l.next()
@@ -591,6 +593,9 @@ func lexBacktick(l *Lexer) func(l *Lexer) stateFn {
 	}
 
 	l.emit(token.ItemIdent)
+
+	l.next()
+	l.emit(token.ItemBacktick)
 
 	return lexDefault
 }
