@@ -1,18 +1,24 @@
-#' Seed database with dummy data
-#'
-#' @details Adds dummy data to the DB if in debug mode.
-#' Called during setup. See [. / conn[setup]].
-#' @param pool The pool object.
-#' @return `NULL`
-seed_database <- \(pool) {
-  events[,
-    event_time := format_datetime(
-      Sys.time() -
-        sample(
-          x = 1:(24 * 60 * 60 * 60),
-          size = nrow(events),
-          replace = TRUE
-        )
-    )
-  ]
+#' @export
+parse_str_to_date <- \(x, default) {
+  is_empty <- is.null(x) || identical(length(x), 0L)
+  if (is_empty) {
+    return(default)
+  }
+
+  expr <- \(){
+    res <- as.Date(x)
+    is_empty <- identical(length(res), 0L)
+    if (is_empty) {
+      return(default)
+    }
+
+    res
+  }
+
+  tryCatch(
+    expr = expr(),
+    error = \(e) {
+      default
+    }
+  )
 }
