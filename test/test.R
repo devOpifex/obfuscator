@@ -1,14 +1,18 @@
-box::use(
-  ambiorix[Ambiorix],
-  . / test2[foo, `%||%`],
-)
-
-NULL %||% foo(41)
-
-app <- Ambiorix$new(port = 8000L)
-
-app$get("/", \(req, res) {
-  res$send("Hello, World!")
-})
-
-app$start()
+#' Seed database with dummy data
+#'
+#' @details Adds dummy data to the DB if in debug mode.
+#' Called during setup. See [. / conn[setup]].
+#' @param pool The pool object.
+#' @return `NULL`
+seed_database <- \(pool) {
+  events[,
+    event_time := format_datetime(
+      Sys.time() -
+        sample(
+          x = 1:(24 * 60 * 60 * 60),
+          size = nrow(events),
+          replace = TRUE
+        )
+    )
+  ]
+}

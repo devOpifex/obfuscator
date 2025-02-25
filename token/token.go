@@ -62,6 +62,9 @@ const (
 	// =
 	ItemAssign
 
+	// :=
+	ItemWalrus
+
 	// NULL
 	ItemNULL
 

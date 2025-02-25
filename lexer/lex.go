@@ -380,6 +380,13 @@ func lexDefault(l *Lexer) stateFn {
 		return lexIdentifier
 	}
 
+	if r1 == ':' && r2 == '=' {
+		l.next()
+		l.next()
+		l.emit(token.ItemWalrus)
+		return lexDefault
+	}
+
 	// we also emit namespace:: (above)
 	// so we can assume this is not
 	if r1 == ':' {

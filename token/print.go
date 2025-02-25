@@ -11,6 +11,7 @@ var ItemName = map[ItemType]string{
 	ItemDoubleQuote:       "double quote",
 	ItemSingleQuote:       "single quote",
 	ItemAssign:            "assign",
+	ItemWalrus:            "walrus",
 	ItemLeftCurly:         "curly left",
 	ItemRightCurly:        "curly right",
 	ItemLeftParen:         "paren left",

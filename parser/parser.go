@@ -33,6 +33,7 @@ const (
 var precedences = map[token.ItemType]int{
 	// Assignment operators (lowest precedence)
 	token.ItemAssign: ASSIGN,
+	token.ItemWalrus: ASSIGN,
 
 	// Tilde
 	token.ItemTilde: TILDE,
@@ -150,6 +151,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.ItemDivide, p.parseInfixExpression)
 	p.registerInfix(token.ItemMultiply, p.parseInfixExpression)
 	p.registerInfix(token.ItemAssign, p.parseInfixExpression)
+	p.registerInfix(token.ItemWalrus, p.parseInfixExpression)
 	p.registerInfix(token.ItemDoubleEqual, p.parseInfixExpression)
 	p.registerInfix(token.ItemNotEqual, p.parseInfixExpression)
 	p.registerInfix(token.ItemLessThan, p.parseInfixExpression)
@@ -604,6 +606,7 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	// it's a function declaration (bit hacky)
 	if p.curTokenIs(token.ItemAssign) && (p.peekTokenIs(token.ItemFunction) || p.peekTokenIs(token.ItemBackslash)) {
 		return p.parseNamedFunctionLiteral(left)
 	}
