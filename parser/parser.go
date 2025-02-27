@@ -345,21 +345,19 @@ func (p *Parser) parseWhile() ast.Expression {
 
 	p.nextToken()
 
-	lit.Statement = p.parseStatement()
+	// Use parseExpression instead of parseStatement for condition
+	lit.Statement = p.parseExpressionStatement()
 
-	if p.peekTokenIs(token.ItemRightParen) {
-		p.nextToken()
+	// Explicitly check for right parenthesis
+	if !p.expectPeek(token.ItemRightParen) {
+		return nil
 	}
 
-	if p.peekTokenIs(token.ItemLeftCurly) {
-		p.nextToken()
+	if !p.expectPeek(token.ItemLeftCurly) {
+		return nil
 	}
 
 	lit.Value = p.parseBlockStatement()
-
-	if p.peekTokenIs(token.ItemRightCurly) {
-		p.nextToken()
-	}
 
 	return lit
 }
