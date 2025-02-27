@@ -345,8 +345,14 @@ func (p *Parser) parseWhile() ast.Expression {
 
 	p.nextToken()
 
-	// Use parseExpression instead of parseStatement for condition
-	lit.Statement = p.parseExpressionStatement()
+	// Parse the condition as an expression with LOWEST precedence
+	expr := p.parseExpression(LOWEST)
+	
+	// Create an expression statement to hold the expression
+	lit.Statement = &ast.ExpressionStatement{
+		Token:      p.curToken,
+		Expression: expr,
+	}
 
 	// Explicitly check for right parenthesis
 	if !p.expectPeek(token.ItemRightParen) {
