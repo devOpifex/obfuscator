@@ -281,6 +281,12 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
+	if r1 == '.' && strings.IndexRune(stringAlphaNum+"_", r2) > 0 {
+		l.next()
+		l.next()
+		return lexIdentifier
+	}
+
 	if r1 == '.' {
 		l.next()
 		l.emit(token.ItemDot)
