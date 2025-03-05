@@ -17,20 +17,20 @@ func (ts Transpilers) Write(out string, header string) {
 }
 
 func (t *Transpiler) replaceRoot(out string) {
-	t.file.Path = filepath.ToSlash(t.file.Path)
-	path := strings.Split(t.file.Path, "/")
+	t.file.Obfuscated = filepath.ToSlash(t.file.Obfuscated)
+	path := strings.Split(t.file.Obfuscated, "/")
 	path = path[1:len(path)]
-	t.file.Path = filepath.Join(out, filepath.Join(path...))
+	t.file.Obfuscated = filepath.Join(out, filepath.Join(path...))
 }
 
 func (t *Transpiler) write(header string) error {
-	dir := filepath.Dir(t.file.Path)
+	dir := filepath.Dir(t.file.Obfuscated)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(t.file.Path, []byte(header+t.GetCode()), 0644); err != nil {
+	if err := os.WriteFile(t.file.Obfuscated, []byte(header+t.GetCode()), 0644); err != nil {
 		return err
 	}
 

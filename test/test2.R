@@ -1,13 +1,6 @@
-#' @export
-foo <- \(x) {
-  return(x + 1)
-}
+# LICENSE SPARKLE TECH
 
 #' @export
-`%||%` <- \(x, y) {
-  if (is.null(x)) {
-    y
-  } else {
-    x
-  }
-}
+M2IzMDNkOGIwMzY0ZDkyNjVjMDZhZGM4NTg0MjU4Mzc2MTUwYzliNQ=\(NzYwMjg0NjJiM2VjMDUyNjdkZDE0MmEwZTkzYTQwMTMxOGJiNzcwNA){return(NzYwMjg0NjJiM2VjMDUyNjdkZDE0MmEwZTkzYTQwMTMxOGJiNzcwNA+1);};
+#' @export
+`%||%`=\(NzYwMjg0NjJiM2VjMDUyNjdkZDE0MmEwZTkzYTQwMTMxOGJiNzcwNA,ODNhOGZjNGY5MmExODA2OTEzYzY3MjdhYzgxM2Y3ZDk5MTU4YjUxNA){if(is.null(NzYwMjg0NjJiM2VjMDUyNjdkZDE0MmEwZTkzYTQwMTMxOGJiNzcwNA)){ODNhOGZjNGY5MmExODA2OTEzYzY3MjdhYzgxM2Y3ZDk5MTU4YjUxNA;}else{NzYwMjg0NjJiM2VjMDUyNjdkZDE0MmEwZTkzYTQwMTMxOGJiNzcwNA;};};

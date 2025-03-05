@@ -72,6 +72,11 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 	case *ast.Identifier:
+		if t.inBoxUse() {
+			t.addCode(node.Value)
+			return node
+		}
+
 		if t.env.GetVariable(node.Value, true) {
 			t.addCode(environment.Mask(node.Value))
 			return node
@@ -155,11 +160,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			t.lastNamespace = node.Left.String()
 		}
 
-		if _, ok := node.Left.(*ast.Identifier); ok && node.Operator == "[" && t.boxUse {
-			t.addCode(node.Left.String())
-		} else {
-			t.Transpile(node.Left)
-		}
+		t.Transpile(node.Left)
 
 		t.addCode(node.Operator)
 		t.Transpile(node.Right)
@@ -204,9 +205,12 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.env = environment.Enclose(t.env)
 		t.addCode("\\(")
 		for i, p := range node.Parameters {
-			if p.Name != "" {
+			if p.Name != "" && p.Name != "..." {
 				t.env.SetVariable(p.Name)
 				t.addCode(environment.Mask(p.Name))
+			}
+			if p.Name == "..." {
+				t.addCode("...")
 			}
 			if p.Value != nil {
 				t.addCode("=")
@@ -251,7 +255,7 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 	// calls to box::use
 	if t.lastNamespace == "box" && node.Name == "use" {
-		t.inBoxUse()
+		t.setBoxUse()
 	}
 
 	ok := t.env.GetFunction(node.Name)
@@ -279,7 +283,7 @@ func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
 			}
 		}
 	}
-	t.outBoxUse()
+	t.unsetBoxUse()
 	t.addCode(")")
 }
 
@@ -302,10 +306,14 @@ func (t *Transpiler) addCode(code string) {
 	t.code = append(t.code, code)
 }
 
-func (t *Transpiler) inBoxUse() {
+func (t *Transpiler) setBoxUse() {
 	t.boxUse = true
 }
 
-func (t *Transpiler) outBoxUse() {
+func (t *Transpiler) unsetBoxUse() {
 	t.boxUse = false
+}
+
+func (t *Transpiler) inBoxUse() bool {
+	return t.boxUse
 }

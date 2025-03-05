@@ -4,8 +4,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/sparkle-tech/obfuscator/ast"
+	"github.com/sparkle-tech/obfuscator/environment"
 	"github.com/sparkle-tech/obfuscator/lexer"
 )
 
@@ -44,9 +46,16 @@ func (o *obfs) walk(path string, directory fs.DirEntry, err error) error {
 		return err
 	}
 
+	pathSplit := strings.Split(filepath.ToSlash(path), "/")
+	for i := range pathSplit {
+		pathSplit[i] = environment.Mask(pathSplit[i])
+	}
+
 	rfl := lexer.File{
-		Path:    path,
-		Content: fl,
+		Path:       path,
+		Obfuscated: filepath.Join(pathSplit...) + ".R",
+		PathSlice:  strings.Split(path, "/"),
+		Content:    fl,
 		Ast: &ast.Program{
 			Statements: []ast.Statement{},
 		},

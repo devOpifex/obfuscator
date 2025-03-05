@@ -12,10 +12,12 @@ import (
 )
 
 type File struct {
-	Path    string
-	Content []byte
-	Items   token.Items
-	Ast     *ast.Program
+	Path       string
+	PathSlice  []string
+	Obfuscated string
+	Content    []byte
+	Items      token.Items
+	Ast        *ast.Program
 }
 
 type Files []File
