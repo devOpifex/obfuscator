@@ -73,6 +73,21 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 
 	case *ast.Identifier:
 		if t.inBoxUse() {
+			if t.env.GetPath(node.Value) {
+				t.addCode(environment.Mask(node.Value))
+				return node
+			}
+
+			if t.env.GetFunction(node.Value) {
+				t.addCode(environment.Mask(node.Value))
+				return node
+			}
+
+			if t.env.GetVariable(node.Value, true) {
+				t.addCode(environment.Mask(node.Value))
+				return node
+			}
+
 			t.addCode(node.Value)
 			return node
 		}

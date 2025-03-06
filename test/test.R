@@ -1,2 +1,3 @@
-# LICENSE SPARKLE TECH
-Mzg0MmI0ZTBiYTE4YTcwZTU1Y2U1YWFlNGY5NTgzMWFlMGMxMDlkNw=\(...){file(...);};
+box::use(. / test2[foo])
+
+foo(23)

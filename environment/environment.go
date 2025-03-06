@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+
+	"github.com/sparkle-tech/obfuscator/lexer"
 )
 
 var KEY string = "DEFAULT"
@@ -14,6 +16,7 @@ type Environment struct {
 	variables []string
 	functions []string
 	arguments []string
+	paths     []string
 	outer     *Environment
 }
 
@@ -79,6 +82,36 @@ func (e *Environment) SetFunction(name string) {
 	}
 
 	e.functions = append(e.functions, name)
+}
+
+func (e *Environment) SetPaths(files lexer.Files) {
+	for _, f := range files {
+		spit := strings.Split(f.Path, "/")
+		for i := range spit {
+			// root path, we skip
+			if i == 0 {
+				continue
+			}
+
+			if i == len(spit)-1 {
+				spit[i] = strings.ReplaceAll(spit[i], ".R", "")
+			}
+			e.setPath(spit[i])
+		}
+	}
+}
+
+func (e *Environment) setPath(name string) {
+	e.paths = append(e.paths, name)
+}
+
+func (e *Environment) GetPath(name string) bool {
+	for _, p := range e.paths {
+		if p == name {
+			return true
+		}
+	}
+	return false
 }
 
 func Mask(txt string) string {

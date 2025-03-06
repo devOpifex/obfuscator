@@ -48,6 +48,9 @@ func (o *obfs) walk(path string, directory fs.DirEntry, err error) error {
 
 	pathSplit := strings.Split(filepath.ToSlash(path), "/")
 	for i := range pathSplit {
+		if i == len(pathSplit)-1 {
+			pathSplit[i] = strings.ReplaceAll(pathSplit[i], ".R", "")
+		}
 		pathSplit[i] = environment.Mask(pathSplit[i])
 	}
 

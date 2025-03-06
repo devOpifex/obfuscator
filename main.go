@@ -34,6 +34,8 @@ func main() {
 		header = string(fl)
 	}
 
+	environment.SetKey(*c.Key)
+
 	obfs := &obfs{}
 	err := obfs.readDir(*c.In)
 
@@ -47,8 +49,8 @@ func main() {
 	p := parser.New(l)
 	p.Run()
 
-	environment.SetKey(*c.Key)
 	env := environment.New()
+	env.SetPaths(l.Files)
 
 	o := obfuscator.New(env, p.Files())
 	o.Run()
