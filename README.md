@@ -2,7 +2,6 @@
 
 Obfuscate R code.
 
-
 ```
 go install github.com/sparkle-tech/obfuscator@latest
 ```
@@ -42,3 +41,4 @@ make sure they have the surrounding curly braces: `if(TRUE) {1} else {0}`
 - Functions without curly braces, e.g.: `\(x) x + 1` must be written as `\(x) {x + 1}`
 - Doesn't understand expressions in curly braces (outside of the `for`, `if`, function bodies, etc.)
 rewrite `tryCatch({x + 1})` to `fn <- \(){x + 1};tryCatch(fn())`
+- Functions that start with a dot, e.g.: `.onLoad` are __not obfuscated__

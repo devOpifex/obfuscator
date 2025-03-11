@@ -16,6 +16,7 @@ type Environment struct {
 	variables []string
 	functions []string
 	arguments []string
+	generics  []string
 	paths     []string
 	outer     *Environment
 }
@@ -99,6 +100,19 @@ func (e *Environment) SetPaths(files lexer.Files) {
 			e.setPath(spit[i])
 		}
 	}
+}
+
+func (e *Environment) setGeneric(name string) {
+	e.paths = append(e.generics, name)
+}
+
+func (e *Environment) GetGeneric(name string) bool {
+	for _, p := range e.paths {
+		if p == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *Environment) setPath(name string) {

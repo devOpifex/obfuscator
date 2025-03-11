@@ -1,4 +1,4 @@
 #' @export
-foo <- function(x) {
+poolClose <- function(x) {
   x + 1
 }

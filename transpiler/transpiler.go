@@ -1,6 +1,7 @@
 package transpiler
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/sparkle-tech/obfuscator/ast"
@@ -16,6 +17,8 @@ type Transpiler struct {
 	boxUse        bool
 	lastNamespace string
 }
+
+var startWithDot = regexp.MustCompile(`^\.`)
 
 type Transpilers []*Transpiler
 
@@ -209,8 +212,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		// these 2 branches are for fecking InfixExpression
 		// `%>%` <- function(lhs, rhs) { #... }
 		if node.Name != "" && !strings.Contains(node.Name, "%") {
-			t.env.SetFunction(node.Name)
-			t.addCode(environment.Mask(node.Name) + "=")
+			t.transpileFunctionName(node)
 		}
 
 		if strings.Contains(node.Name, "%") {
@@ -331,4 +333,38 @@ func (t *Transpiler) unsetBoxUse() {
 
 func (t *Transpiler) inBoxUse() bool {
 	return t.boxUse
+}
+
+func (t *Transpiler) transpileFunctionName(node *ast.FunctionLiteral) {
+	// we don't obfuscate function names that start with a dot, e.g.: .onLoad
+	if startWithDot.MatchString(node.Name) {
+		t.addCode(node.Name)
+		return
+	}
+
+	// split on . to identify methods
+	split := strings.Split(node.Name, ".")
+
+	if len(split) < 2 {
+		t.env.SetFunction(node.Name)
+		t.addCode(environment.Mask(node.Name) + "=")
+		return
+	}
+
+	// it's not a method (no dot)
+	if t.env.GetGeneric(split[0]) {
+		t.env.SetFunction(node.Name)
+		t.addCode(environment.Mask(node.Name) + "=")
+		return
+	}
+
+	// it's a method (we find an existing function before first dot)
+	if ok := t.env.GetFunction(split[0]); ok {
+		rest := strings.Join(split[1:], ".")
+		t.addCode(environment.Mask(split[0]) + "." + rest)
+		return
+	}
+
+	t.env.SetFunction(node.Name)
+	t.addCode(environment.Mask(node.Name) + "=")
 }
