@@ -32,15 +32,16 @@ __Example usage__
 obfuscate -in=R -out=sparkle -key=123 -header=header.txt
 ```
 
-__Caveat__
+__Caveats__
 
-Currently cannot parse:
+Currently known issues and usage:
 
 - `if` statements without curly braces, e.g.: `ìf(TRUE) 1 else 0`
 make sure they have the surrounding curly braces: `if(TRUE) {1} else {0}`
 - Functions without curly braces, e.g.: `\(x) x + 1` must be written as `\(x) {x + 1}`
 - Doesn't understand expressions in curly braces (outside of the `for`, `if`, function bodies, etc.)
 rewrite `tryCatch({x + 1})` to `fn <- \(){x + 1};tryCatch(fn())`
+- `switch` cases are obfuscated, put in quotes if you do not want obfuscation, e.g.: `switch(1, "1"=1)`
 - Functions that start with a dot are __not obfuscated__, e.g.: `.onLoad`
 - Files names are also obfuscated, e.g.: `foo.R` becomes `xyz.R` except files names 
 starting with `__` (their content is obfuscated)
