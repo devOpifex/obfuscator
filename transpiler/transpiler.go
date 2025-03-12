@@ -86,6 +86,12 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			return node
 		}
 
+		if !t.obfuscateNext {
+			t.addCode(node.Value)
+			t.obfuscateNext = true
+			return node
+		}
+
 		if t.inBoxUse() {
 			if t.env.GetPath(node.Value) {
 				t.addCode(environment.Mask(node.Value))
@@ -197,11 +203,11 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			t.lastNamespace = node.Left.String()
 		}
 
-		if _, ok := node.Left.(*ast.Identifier); ok && node.Operator == "$" {
+		t.Transpile(node.Left)
+
+		if node.Operator == "$" {
 			t.obfuscateNext = false
 		}
-
-		t.Transpile(node.Left)
 
 		t.addCode(node.Operator)
 
