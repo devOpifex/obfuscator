@@ -11,6 +11,7 @@ import (
 )
 
 var KEY string = "DEFAULT"
+var PROTECT []string
 
 type Environment struct {
 	variables []string
@@ -31,8 +32,9 @@ func Open(env *Environment) *Environment {
 	return env.outer
 }
 
-func SetKey(key string) {
+func Define(key string, protect string) {
 	KEY = key
+	PROTECT = strings.Split(protect, ",")
 }
 
 func New() *Environment {
@@ -115,7 +117,24 @@ func (e *Environment) GetPath(name string) bool {
 	return false
 }
 
+func isProtected(name string) bool {
+	if len(PROTECT) == 0 {
+		return false
+	}
+
+	for _, p := range PROTECT {
+		if p == name {
+			return true
+		}
+	}
+	return false
+}
+
 func Mask(txt string) string {
+	if isProtected(txt) {
+		return txt
+	}
+
 	hasher := sha1.New()
 	hasher.Write([]byte(txt + KEY))
 	sha := hex.EncodeToString(hasher.Sum(nil))

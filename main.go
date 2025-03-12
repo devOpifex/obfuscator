@@ -34,7 +34,7 @@ func main() {
 		header = string(fl)
 	}
 
-	environment.SetKey(*c.Key)
+	environment.Define(*c.Key, *c.Protect)
 
 	obfs := &obfs{}
 	err := obfs.readDir(*c.In)
