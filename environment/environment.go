@@ -102,19 +102,6 @@ func (e *Environment) SetPaths(files lexer.Files) {
 	}
 }
 
-func (e *Environment) setGeneric(name string) {
-	e.paths = append(e.generics, name)
-}
-
-func (e *Environment) GetGeneric(name string) bool {
-	for _, p := range e.paths {
-		if p == name {
-			return true
-		}
-	}
-	return false
-}
-
 func (e *Environment) setPath(name string) {
 	e.paths = append(e.paths, name)
 }

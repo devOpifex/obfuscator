@@ -351,13 +351,6 @@ func (t *Transpiler) transpileFunctionName(node *ast.FunctionLiteral) {
 		return
 	}
 
-	// it's not a method (no dot)
-	if t.env.GetGeneric(split[0]) {
-		t.env.SetFunction(node.Name)
-		t.addCode(environment.Mask(node.Name) + "=")
-		return
-	}
-
 	// it's a method (we find an existing function before first dot)
 	if ok := t.env.GetFunction(split[0]); ok {
 		rest := strings.Join(split[1:], ".")
