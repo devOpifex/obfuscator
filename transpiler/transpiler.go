@@ -16,6 +16,7 @@ type Transpiler struct {
 	file          lexer.File
 	boxUse        bool
 	boxUsePath    bool
+	useMethod     bool
 	lastNamespace string
 }
 
@@ -134,6 +135,10 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.addCode(node.Value)
 
 	case *ast.StringLiteral:
+		if t.useMethod {
+			node.Str = environment.Mask(node.Str)
+			t.useMethod = false
+		}
 		t.addCode(node.Token.Value + node.Str + node.Token.Value)
 
 	case *ast.BacktickLiteral:
@@ -259,7 +264,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		t.addCode("}")
 
 	case *ast.CallExpression:
-		t.obfuscateCallExpression(node)
+		t.transpileCallExpression(node)
 	}
 
 	return node
@@ -282,10 +287,14 @@ func (t *Transpiler) obfuscateProgram(program *ast.Program) ast.Node {
 	return node
 }
 
-func (t *Transpiler) obfuscateCallExpression(node *ast.CallExpression) {
+func (t *Transpiler) transpileCallExpression(node *ast.CallExpression) {
 	// calls to box::use
 	if t.lastNamespace == "box" && node.Name == "use" {
 		t.setBoxUse()
+	}
+
+	if node.Name == "UseMethod" {
+		t.useMethod = true
 	}
 
 	ok := t.env.GetFunction(node.Name)
@@ -367,7 +376,7 @@ func (t *Transpiler) transpileFunctionName(node *ast.FunctionLiteral) {
 	// it's a method (we find an existing function before first dot)
 	if ok := t.env.GetFunction(split[0]); ok {
 		rest := strings.Join(split[1:], ".")
-		t.addCode(environment.Mask(split[0]) + "." + rest)
+		t.addCode(environment.Mask(split[0]) + "." + rest + "=")
 		return
 	}
 
