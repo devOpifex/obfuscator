@@ -45,3 +45,4 @@ rewrite `tryCatch({x + 1})` to `fn <- \(){x + 1};tryCatch(fn())`
 - Functions that start with a dot are __not obfuscated__, e.g.: `.onLoad`
 - Files names are also obfuscated, e.g.: `foo.R` becomes `xyz.R` except files names 
 starting with `__` (their content is obfuscated)
+- Only `.R` files are obfuscated
