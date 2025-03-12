@@ -16,14 +16,16 @@ __Flags__
 ```
 $> obfuscator -h
 Usage of obfuscator:
-  -header string
-        Header to append to obfuscated code, e.g.: license
-  -in string
-        Directory of R files to obfuscate
-  -key string
-        Key to obfuscate
-  -out string
-        Output name of file to write obfuscated code
+-header string
+    Header to append to obfuscated code, e.g.: license
+-in string
+    Directory of R files to obfuscate
+-key string
+    Key to obfuscate
+-out string
+    Directory where to write the obfuscated files
+-protect string
+    Comma separated protected tokens, e.g.: foo,bar
 ```
 
 __Example usage__
