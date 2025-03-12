@@ -15,6 +15,7 @@ type Transpiler struct {
 	env           *environment.Environment
 	file          lexer.File
 	boxUse        bool
+	boxUsePath    bool
 	lastNamespace string
 }
 
@@ -75,6 +76,13 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		}
 
 	case *ast.Identifier:
+		// handles box::use(.pool[poolClose])
+		// it should not be obfuscated
+		if t.inBoxUse() && !t.boxUsePath {
+			t.addCode(node.Value)
+			return node
+		}
+
 		if t.inBoxUse() {
 			if t.env.GetPath(node.Value) {
 				t.addCode(environment.Mask(node.Value))
@@ -165,6 +173,10 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			node.Operator = " in "
 		}
 
+		if t.inBoxUse() && node.Operator == "/" {
+			t.boxUsePath = true
+		}
+
 		// it's a pipe e.g.: %>%
 		if strings.Contains(node.Operator, "%") {
 			node.Operator = " " + node.Operator + " "
@@ -185,6 +197,7 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		return node.Right
 
 	case *ast.Square:
+		t.boxUsePath = false
 		t.addCode(node.Token.Value)
 
 	case *ast.PostfixExpression:

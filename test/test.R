@@ -1,4 +1,26 @@
-box::use(. / test2[poolClose], pool[poolClose])
+#' @export
+box::use(
+  . /
+    env_vars[
+      get_env_var,
+      in_prod_mode,
+      in_debug_mode,
+    ],
+  . /
+    datetime[
+      current_date,
+      format_datetime,
+      current_datetime,
+      parse_str_to_date,
+    ],
+  . / rename[rename],
+  . /
+    operators[
+      `%||%`,
+      get_value_or_empty,
+    ],
+  . / parse_req[parse_req],
+)
 
 foo(23)
 

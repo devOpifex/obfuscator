@@ -51,6 +51,11 @@ func (o *obfs) walk(path string, directory fs.DirEntry, err error) error {
 		if i == len(pathSplit)-1 {
 			pathSplit[i] = strings.ReplaceAll(pathSplit[i], ".R", "")
 		}
+
+		if pathSplit[i] == "__init__" {
+			continue
+		}
+
 		pathSplit[i] = environment.Mask(pathSplit[i])
 	}
 
