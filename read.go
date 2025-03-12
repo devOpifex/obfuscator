@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/sparkle-tech/obfuscator/ast"
@@ -14,6 +15,8 @@ import (
 type obfs struct {
 	files lexer.Files
 }
+
+var ignoreRegex = regexp.MustCompile("^__")
 
 func (o *obfs) readDir(root string) error {
 	err := filepath.WalkDir(root, o.walk)
@@ -52,7 +55,7 @@ func (o *obfs) walk(path string, directory fs.DirEntry, err error) error {
 			pathSplit[i] = strings.ReplaceAll(pathSplit[i], ".R", "")
 		}
 
-		if pathSplit[i] == "__init__" {
+		if ignoreRegex.MatchString(pathSplit[i]) {
 			continue
 		}
 
