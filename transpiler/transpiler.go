@@ -17,6 +17,7 @@ type Transpiler struct {
 	boxUse        bool
 	boxUsePath    bool
 	useMethod     bool
+	obfuscateNext bool
 	lastNamespace string
 }
 
@@ -29,8 +30,9 @@ func New(env *environment.Environment, files lexer.Files) Transpilers {
 
 	for _, f := range files {
 		ts = append(ts, &Transpiler{
-			env:  env,
-			file: f,
+			env:           env,
+			file:          f,
+			obfuscateNext: true,
 		})
 	}
 
@@ -195,10 +197,17 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 			t.lastNamespace = node.Left.String()
 		}
 
+		if _, ok := node.Left.(*ast.Identifier); ok && node.Operator == "$" {
+			t.obfuscateNext = false
+		}
+
 		t.Transpile(node.Left)
 
 		t.addCode(node.Operator)
+
 		t.Transpile(node.Right)
+		t.obfuscateNext = true
+
 		return node.Right
 
 	case *ast.Square:
@@ -298,13 +307,15 @@ func (t *Transpiler) transpileCallExpression(node *ast.CallExpression) {
 	}
 
 	ok := t.env.GetFunction(node.Name)
-	if ok {
+	if ok && t.obfuscateNext {
 		t.addCode(environment.Mask(node.Name) + "(")
 	}
 
-	if !ok {
+	if !ok || !t.obfuscateNext {
 		t.addCode(node.Name + "(")
 	}
+
+	t.obfuscateNext = true
 
 	for i, a := range node.Arguments {
 		if a.Name != "" && ok {
