@@ -347,7 +347,7 @@ func (p *Parser) parseWhile() ast.Expression {
 
 	// Parse the condition as an expression with LOWEST precedence
 	expr := p.parseExpression(LOWEST)
-	
+
 	// Create an expression statement to hold the expression
 	lit.Statement = &ast.ExpressionStatement{
 		Token:      p.curToken,

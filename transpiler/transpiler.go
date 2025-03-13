@@ -355,6 +355,7 @@ func (t *Transpiler) cleanCode() string {
 	code = strings.ReplaceAll(code, ";,", ",")
 	code = strings.ReplaceAll(code, ",;", ",")
 	code = strings.ReplaceAll(code, "(,", "(")
+	code = strings.ReplaceAll(code, ";;", ";")
 	return code
 }
 
