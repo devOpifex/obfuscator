@@ -15,8 +15,14 @@ import (
 func main() {
 	c := cli.Cli()
 
-	if *c.In == "" || *c.Out == "" || *c.Key == "" {
-		log.Fatal("Must pass -in -out and -key")
+	if *c.Key == "" {
+		log.Fatal("Must pass -key")
+	}
+
+	environment.Define(*c.Key, *c.Protect)
+
+	if *c.In == "" || *c.Out == "" {
+		log.Fatal("Must pass -in, and -out")
 	}
 
 	if *c.In == *c.Out {
@@ -33,8 +39,6 @@ func main() {
 
 		header = string(fl)
 	}
-
-	environment.Define(*c.Key, *c.Protect)
 
 	obfs := &obfs{}
 	err := obfs.readDir(*c.In)
