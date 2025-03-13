@@ -7,7 +7,7 @@ import (
 type CLI struct {
 	In      *string
 	Out     *string
-	Header  *string
+	License *string
 	Key     *string
 	Protect *string
 }
@@ -16,7 +16,7 @@ func Cli() CLI {
 	in := flag.String("in", "", "Directory of R files to obfuscate")
 	out := flag.String("out", "", "Directory where to write the obfuscated files")
 	key := flag.String("key", "", "Key to obfuscate")
-	header := flag.String("header", "", "Header to append to obfuscated code, e.g.: license")
+	license := flag.String("license", "", "License to prepend to every obfuscated file, e.g.: license")
 	protect := flag.String("protect", "", "Comma separated protected tokens, e.g.: foo,bar")
 
 	flag.Parse()
@@ -25,7 +25,7 @@ func Cli() CLI {
 		In:      in,
 		Out:     out,
 		Key:     key,
-		Header:  header,
+		License: license,
 		Protect: protect,
 	}
 }

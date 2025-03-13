@@ -1,7 +1,7 @@
 package environment
 
 import (
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -135,7 +135,7 @@ func Mask(txt string) string {
 		return txt
 	}
 
-	hasher := sha1.New()
+	hasher := sha256.New()
 	hasher.Write([]byte(txt + KEY))
 	sha := hex.EncodeToString(hasher.Sum(nil))
 	hash := base64.StdEncoding.EncodeToString([]byte(sha))

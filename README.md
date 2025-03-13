@@ -16,12 +16,12 @@ __Flags__
 ```
 $> obfuscator -h
 Usage of obfuscator:
--header string
-    Header to append to obfuscated code, e.g.: license
 -in string
     Directory of R files to obfuscate
 -key string
     Key to obfuscate
+-license string
+    License to prepend to every obfuscated file, e.g.: license
 -out string
     Directory where to write the obfuscated files
 -protect string
@@ -31,7 +31,7 @@ Usage of obfuscator:
 __Example usage__
 
 ```
-obfuscate -in=R -out=sparkle -key=123 -header=header.txt
+obfuscate -in=R -out=obfuscated -key=123 -license=license.txt
 ```
 
 __Caveats__

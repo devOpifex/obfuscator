@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/sparkle-tech/obfuscator/cli"
 	"github.com/sparkle-tech/obfuscator/environment"
@@ -29,16 +28,7 @@ func main() {
 		log.Fatal("Input == output")
 	}
 
-	header := ""
-	if *c.Header != "" {
-		fl, err := os.ReadFile(*c.Header)
-
-		if err != nil {
-			log.Fatal("Failed to read -header")
-		}
-
-		header = string(fl)
-	}
+	license := readLicense(*c.License)
 
 	obfs := &obfs{}
 	err := obfs.readDir(*c.In)
@@ -62,5 +52,5 @@ func main() {
 
 	t := transpiler.New(env, p.Files())
 	t.Run()
-	t.Write(*c.Out, header)
+	t.Write(*c.Out, license)
 }
