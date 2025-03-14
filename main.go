@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/sparkle-tech/obfuscator/cli"
@@ -20,8 +21,13 @@ func main() {
 
 	environment.Define(*c.Key, *c.Protect)
 
+	if *c.Decipher != "" {
+		fmt.Println(environment.Unmask(*c.Decipher))
+		return
+	}
+
 	if *c.In == "" || *c.Out == "" {
-		log.Fatal("Must pass -in, and -out")
+		log.Fatal("Must pass -in and -out")
 	}
 
 	if *c.In == *c.Out {

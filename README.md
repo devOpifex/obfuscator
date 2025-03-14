@@ -16,6 +16,8 @@ __Flags__
 ```
 $> obfuscator -h
 Usage of obfuscator:
+  -decipher string
+        String to decypher
 -in string
     Directory of R files to obfuscate
 -key string
