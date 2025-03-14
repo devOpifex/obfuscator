@@ -2,16 +2,18 @@
 
 Obfuscate R code.
 
+> [!WARNING]
+> This tool only obfuscates code and does not encrypt it.
+> Obfuscation is not a security measure and should not be relied upon to protect 
+> sensitive code or intellectual property.
+> The obfuscated code can potentially be reverse-engineered.
+> Do not use this tool with the expectation that it makes your code secure to share.
+
 ```
 go install github.com/sparkle-tech/obfuscator@latest
 ```
 
-__Flags__
-
-- `in`: directory where to find R files to obfuscate.
-- `out`: name of obfuscated file to create.
-- `key`: unique key used to obfuscate code.
-- `header`: header text to insert at top of obfuscated file, generally license (optional).
+## Usage
 
 ```
 $> obfuscator -h
@@ -30,13 +32,13 @@ Usage of obfuscator:
     Comma separated protected tokens, e.g.: foo,bar
 ```
 
-__Example usage__
+__Example__
 
 ```
 obfuscate -in=R -out=obfuscated -key=123 -license=license.txt
 ```
 
-__Caveats__
+## Caveats
 
 Currently known issues and usage:
 
@@ -46,6 +48,7 @@ make sure they have the surrounding curly braces: `if(TRUE) {1} else {0}`
 - Doesn't understand expressions in curly braces (outside of the `for`, `if`, function bodies, etc.)
 rewrite `tryCatch({x + 1})` to `fn <- \(){x + 1};tryCatch(fn())`
 - Functions that start with a dot are __not obfuscated__, e.g.: `.onLoad`
-- Files names are also obfuscated, e.g.: `foo.R` becomes `xyz.R` except files names 
+- Files names are also obfuscated, e.g.: `foo.R` becomes `xyz.R` __except__ files names 
 starting with `__` (their content is obfuscated)
 - Only `.R` files are obfuscated
+- arguments `do.call` is __not obfuscated__, avoid `do.call`.
