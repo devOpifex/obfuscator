@@ -18,18 +18,18 @@ go install github.com/sparkle-tech/obfuscator@latest
 ```
 $> obfuscator -h
 Usage of obfuscator:
-  -decipher string
-        String to decypher
--in string
-    Directory of R files to obfuscate
--key string
-    Key to obfuscate
--license string
-    License to prepend to every obfuscated file, e.g.: license
--out string
-    Directory where to write the obfuscated files
--protect string
-    Comma separated protected tokens, e.g.: foo,bar
+  -deobfuscate
+        Deobfuscate the obfuscated files
+  -in string
+        Directory of R files to obfuscate
+  -key string
+        Key to obfuscate
+  -license string
+        License to prepend to every obfuscated file, e.g.: license
+  -out string
+        Directory where to write the obfuscated files
+  -protect string
+        Comma separated protected tokens, e.g.: foo,bar
 ```
 
 __Example__
