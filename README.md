@@ -89,7 +89,7 @@ obfuscator -deobfuscate -in=obfuscated -out=deobfuscated -key=123
 
 ### Obfuscation Exceptions
 
-- Functions starting with a dot (e.g., `.onLoad`) are **not obfuscated**
+- The names of functions starting with a dot (e.g., `.onLoad`) are **not obfuscated**
 - File names starting with `__` are **not renamed** (but their content is still obfuscated)
 - Only files witht the `.R` extension are processed
 - Arguments to `do.call()` are **not obfuscated** - consider alternatives
