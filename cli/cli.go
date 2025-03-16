@@ -5,12 +5,12 @@ import (
 )
 
 type CLI struct {
-	In       *string
-	Out      *string
-	License  *string
-	Key      *string
-	Protect  *string
-	Decipher *string
+	In          *string
+	Out         *string
+	License     *string
+	Key         *string
+	Protect     *string
+	Deobfuscate *bool
 }
 
 func Cli() CLI {
@@ -19,16 +19,16 @@ func Cli() CLI {
 	key := flag.String("key", "", "Key to obfuscate")
 	license := flag.String("license", "", "License to prepend to every obfuscated file, e.g.: license")
 	protect := flag.String("protect", "", "Comma separated protected tokens, e.g.: foo,bar")
-	decipher := flag.String("decipher", "", "String to decypher")
+	deobfuscate := flag.Bool("deobfuscate", false, "Deobfuscate the obfuscated files")
 
 	flag.Parse()
 
 	return CLI{
-		In:       in,
-		Out:      out,
-		Key:      key,
-		License:  license,
-		Protect:  protect,
-		Decipher: decipher,
+		In:          in,
+		Out:         out,
+		Key:         key,
+		License:     license,
+		Protect:     protect,
+		Deobfuscate: deobfuscate,
 	}
 }

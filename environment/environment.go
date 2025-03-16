@@ -8,6 +8,7 @@ import (
 
 var KEY string = "DEFAULT"
 var PROTECT []string
+var DEOBFUSCATE bool = false
 
 type Environment struct {
 	variables []string
@@ -28,9 +29,10 @@ func Open(env *Environment) *Environment {
 	return env.outer
 }
 
-func Define(key string, protect string) {
+func Define(key string, protect string, deobfuscate bool) {
 	KEY = key
 	PROTECT = strings.Split(protect, ",")
+	DEOBFUSCATE = deobfuscate
 }
 
 func New() *Environment {
@@ -129,6 +131,10 @@ func isProtected(name string) bool {
 func Mask(txt string) string {
 	if isProtected(txt) {
 		return txt
+	}
+
+	if DEOBFUSCATE {
+		return decipher(txt, KEY)
 	}
 
 	return cipher(txt, KEY)

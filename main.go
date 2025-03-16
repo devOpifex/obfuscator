@@ -19,12 +19,7 @@ func main() {
 		log.Fatal("Must pass -key")
 	}
 
-	environment.Define(*c.Key, *c.Protect)
-
-	if *c.Decipher != "" {
-		fmt.Println(environment.Unmask(*c.Decipher))
-		return
-	}
+	environment.Define(*c.Key, *c.Protect, *c.Deobfuscate)
 
 	if *c.In == "" || *c.Out == "" {
 		log.Fatal("Must pass -in and -out")
@@ -35,6 +30,11 @@ func main() {
 	}
 
 	license := readLicense(*c.License)
+
+	if *c.Deobfuscate && *c.License != "" {
+		fmt.Println("Deobfuscating, ignoring -license")
+		license = ""
+	}
 
 	obfs := &obfs{}
 	err := obfs.readDir(*c.In)

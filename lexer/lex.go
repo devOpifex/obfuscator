@@ -231,7 +231,7 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
-	if r1 == '\n' || r1 == '\r' {
+	if r1 == '\n' || r1 == '\r' || r1 == ';' {
 		l.next()
 		l.ignore()
 		l.line++
@@ -580,7 +580,7 @@ func lexNumber(l *Lexer) stateFn {
 
 func lexComment(l *Lexer) stateFn {
 	r := l.peek(1)
-	for r != '\n' && r != token.EOF {
+	for r != '\n' && r != ';' && r != token.EOF {
 		l.next()
 		r = l.peek(1)
 	}
