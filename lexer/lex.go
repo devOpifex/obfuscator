@@ -508,6 +508,18 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
+	if r1 == '{' {
+		l.next()
+		l.emit(token.ItemLeftCurly)
+		return lexDefault
+	}
+
+	if r1 == '}' {
+		l.next()
+		l.emit(token.ItemRightCurly)
+		return lexDefault
+	}
+
 	if l.acceptNumber() {
 		return lexNumber
 	}

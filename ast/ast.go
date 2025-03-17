@@ -93,6 +93,18 @@ func (es *ExpressionStatement) String() string {
 	return ""
 }
 
+type ExpressionBlock struct {
+	Token      token.Item // the first token of the expression
+	Expression *BlockStatement
+}
+
+func (eb ExpressionBlock) Item() token.Item     { return eb.Token }
+func (eb ExpressionBlock) expressionNode()      {}
+func (eb ExpressionBlock) TokenLiteral() string { return eb.Token.Value }
+func (eb ExpressionBlock) String() string {
+	return "{" + eb.Expression.String() + "}"
+}
+
 type BlockStatement struct {
 	Token      token.Item // the { token
 	Statements []Statement

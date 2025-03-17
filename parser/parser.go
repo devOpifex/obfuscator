@@ -139,6 +139,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ItemDoubleRightSquare, p.parsePostfixSquare)
 	p.registerPrefix(token.ItemLeftParen, p.parseLeftParen)
 	p.registerPrefix(token.ItemRightParen, p.parseRightParen)
+	p.registerPrefix(token.ItemLeftCurly, p.parseLeftCurly)
 
 	p.infixParseFns = make(map[token.ItemType]infixParseFn)
 	p.registerInfix(token.ItemInfix, p.parseInfixExpression)
@@ -467,6 +468,12 @@ func (p *Parser) parseInf() ast.Expression {
 	}
 }
 
+func (p *Parser) parseLeftCurly() ast.Expression {
+	var exp ast.ExpressionBlock
+	exp.Expression = p.parseBlockStatement()
+	return exp
+}
+
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
@@ -705,6 +712,14 @@ func (p *Parser) parseFunctionParameters() []*ast.Argument {
 	}
 
 	p.nextToken() // move past opening paren
+
+	if p.curTokenIs(token.ItemLeftCurly) {
+		params = append(params, &ast.Argument{
+			Token: p.curToken,
+			Value: p.parseLeftCurly(),
+		})
+		p.nextToken()
+	}
 
 	for !p.curTokenIs(token.ItemRightParen) && !p.curTokenIs(token.ItemEOF) {
 		if p.curTokenIs(token.ItemComma) {

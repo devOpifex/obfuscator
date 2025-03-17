@@ -63,6 +63,11 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 	case *ast.Null:
 		t.addCode("NULL")
 
+	case ast.ExpressionBlock:
+		t.addCode("{")
+		t.Transpile(node.Expression)
+		t.addCode("}")
+
 	case *ast.Keyword:
 		t.addCode(node.Value)
 
@@ -355,6 +360,7 @@ func (t *Transpiler) cleanCode() string {
 	code = strings.ReplaceAll(code, ";,", ",")
 	code = strings.ReplaceAll(code, ",;", ",")
 	code = strings.ReplaceAll(code, "(,", "(")
+	code = strings.ReplaceAll(code, "{;", "{")
 	code = strings.ReplaceAll(code, ";;", ";")
 	return code
 }
