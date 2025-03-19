@@ -809,9 +809,11 @@ func (p *Parser) parseFunctionArguments() []*ast.Argument {
 func (p *Parser) parseNamedFunctionLiteral(name ast.Expression) ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken, Name: name.String()}
 
-	if !(p.expectPeek(token.ItemFunction) || p.expectPeek(token.ItemBackslash)) {
+	if !(p.peekTokenIs(token.ItemFunction) || p.peekTokenIs(token.ItemBackslash)) {
+		p.peekError(token.ItemFunction)
 		return nil
 	}
+	p.nextToken()
 
 	if !p.expectPeek(token.ItemLeftParen) {
 		return nil
