@@ -46,8 +46,18 @@ func main() {
 	l := lexer.New(obfs.files)
 	l.Run()
 
+	if l.HasError() {
+		log.Fatal(l.Errors())
+		return
+	}
+
 	p := parser.New(l)
 	p.Run()
+
+	if p.HasError() {
+		log.Fatal(p.Errors())
+		return
+	}
 
 	env := environment.New()
 	env.SetPaths(l.Files)
