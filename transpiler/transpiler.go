@@ -1,7 +1,9 @@
 package transpiler
 
 import (
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/sparkle-tech/obfuscator/ast"
@@ -142,7 +144,14 @@ func (t *Transpiler) Transpile(node ast.Node) ast.Node {
 		return node
 
 	case *ast.IntegerLiteral:
-		t.addCode(node.Value)
+		v := strings.Replace(node.Value, "L", "", -1)
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			t.addCode(node.Value)
+			return node
+		}
+		hex := fmt.Sprintf("%x", i)
+		t.addCode("0x" + hex)
 
 	case *ast.FloatLiteral:
 		t.addCode(node.Value)

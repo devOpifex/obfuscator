@@ -47,19 +47,19 @@ Usage of obfuscator:
 **Basic Obfuscation:**
 
 ```bash
-obfuscator -in=R -out=obfuscated -key=123
+obfuscator -in=R -out=obfuscated -key=secret
 ```
 
 **With License and Protected Tokens:**
 
 ```bash
-obfuscator -in=R -out=obfuscated -key=123 -license=license.txt -protect=myFunction,importantVar
+obfuscator -in=R -out=obfuscated -key=secret -license=license.txt -protect=myFunction,importantVar
 ```
 
 **Deobfuscation:**
 
 ```bash
-obfuscator -deobfuscate -in=obfuscated -out=deobfuscated -key=123
+obfuscator -deobfuscate -in=obfuscated -out=deobfuscated -key=secret
 ```
 
 ### Parameter Details
