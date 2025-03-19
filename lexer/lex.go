@@ -373,6 +373,14 @@ func lexDefault(l *Lexer) stateFn {
 		return lexDefault
 	}
 
+	if r1 == '<' && r2 == '<' && l.peek(3) == '-' {
+		l.next()
+		l.next()
+		l.next()
+		l.emit(token.ItemAssignParent)
+		return lexDefault
+	}
+
 	if r1 == ':' && r2 == ':' && l.peek(3) == ':' {
 		l.next()
 		l.next()
