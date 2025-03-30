@@ -729,6 +729,11 @@ func (p *Parser) parseFunctionParameters() []*ast.Argument {
 			continue
 		}
 
+		if p.curTokenIs(token.ItemComment) {
+			p.nextToken()
+			continue
+		}
+
 		arg := &ast.Argument{
 			Token: p.curToken,
 		}
