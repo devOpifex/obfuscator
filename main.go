@@ -36,7 +36,7 @@ func main() {
 		license = ""
 	}
 
-	obfs := &obfs{}
+	obfs := &obfs{ignore: c.Ignore}
 	err := obfs.readDir(*c.In)
 
 	if err != nil {

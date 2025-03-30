@@ -13,7 +13,8 @@ import (
 )
 
 type obfs struct {
-	files lexer.Files
+	files  lexer.Files
+	ignore []string
 }
 
 var ignoreRegex = regexp.MustCompile("^__")
@@ -40,6 +41,10 @@ func (o *obfs) walk(path string, directory fs.DirEntry, err error) error {
 	ext := filepath.Ext(path)
 
 	if ext != ".R" {
+		return nil
+	}
+
+	if o.Ignore(path) {
 		return nil
 	}
 
@@ -75,4 +80,14 @@ func (o *obfs) walk(path string, directory fs.DirEntry, err error) error {
 	o.files = append(o.files, rfl)
 
 	return nil
+}
+
+func (o *obfs) Ignore(path string) bool {
+	for _, ignore := range o.ignore {
+		if strings.Contains(path, ignore) {
+			return true
+		}
+	}
+
+	return false
 }

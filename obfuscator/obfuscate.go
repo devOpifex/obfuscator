@@ -7,8 +7,9 @@ import (
 )
 
 type Obfuscator struct {
-	env   *environment.Environment
-	files lexer.Files
+	env    *environment.Environment
+	ignore []string
+	files  lexer.Files
 }
 
 func New(env *environment.Environment, files lexer.Files) *Obfuscator {
