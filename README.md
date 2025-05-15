@@ -64,6 +64,8 @@ obfuscator -deobfuscate -in=obfuscated -out=deobfuscated -key=secret
 
 ### Parameter Details
 
+See `obfuscator -h` for more details.
+
 - **-in**: Source directory containing R files to process
 - **-out**: Destination directory for processed files
 - **-key**: Encryption key used for the obfuscation algorithm
