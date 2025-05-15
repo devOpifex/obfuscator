@@ -1,4 +1,4 @@
-# obfuscator
+![obfuscator](obfuscator.png)
 
 A tool to obfuscate R code by renaming variables, functions, and file names while preserving functionality.
 
