@@ -15,6 +15,8 @@ A tool to obfuscate R code by renaming variables, functions, and file names whil
 go install github.com/devOpifex/obfuscator@latest
 ```
 
+Or see the [releases](https://github.com/devOpifex/obfuscator/releases/latest) page for pre-built binaries.
+
 You can also build from source:
 
 ```bash
