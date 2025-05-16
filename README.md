@@ -21,7 +21,6 @@ You can also build from source:
 
 ```bash
 git clone https://github.com/devOpifex/obfuscator.git
-cd obfuscator
 go build
 ```
 
