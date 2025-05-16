@@ -44,8 +44,6 @@ Usage of obfuscator:
         Comma separated protected tokens, e.g.: foo,bar
 ```
 
-### Examples
-
 **Basic Obfuscation:**
 
 ```bash
@@ -62,6 +60,32 @@ obfuscator -in=R -out=obfuscated -key=secret -license=license.txt -protect=myFun
 
 ```bash
 obfuscator -deobfuscate -in=obfuscated -out=deobfuscated -key=secret
+```
+
+### Example
+
+Turn this:
+
+```r
+foo <- \(x) {
+  x + 1
+}
+
+bar <- \(x) {
+  foo(x)
+}
+
+baz <- \(x) {
+  bar(x)
+}
+
+baz(42)
+```
+
+Into this:
+
+```r
+fOAaPAYPA=\(xOA){xOA+0x1;};bOAMPAbPA=\(xOA){fOAaPAYPA(xOA);};bOAMPAjPA=\(xOA){bOAMPAbPA(xOA);};bOAMPAjPA(0x2a);
 ```
 
 ### Parameter Details
