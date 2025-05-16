@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/sparkle-tech/obfuscator/lexer"
+	"github.com/devOpifex/obfuscator/lexer"
 )
 
 func TestBasic(t *testing.T) {

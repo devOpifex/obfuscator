@@ -12,7 +12,7 @@ A tool to obfuscate R code by renaming variables, functions, and file names whil
 ## Installation
 
 ```bash
-go install github.com/sparkle-tech/obfuscator@latest
+go install github.com/devOpifex/obfuscator@latest
 ```
 
 You can also build from source:

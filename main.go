@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sparkle-tech/obfuscator/cli"
-	"github.com/sparkle-tech/obfuscator/environment"
-	"github.com/sparkle-tech/obfuscator/lexer"
-	"github.com/sparkle-tech/obfuscator/obfuscator"
-	"github.com/sparkle-tech/obfuscator/parser"
-	"github.com/sparkle-tech/obfuscator/transpiler"
+	"github.com/devOpifex/obfuscator/cli"
+	"github.com/devOpifex/obfuscator/environment"
+	"github.com/devOpifex/obfuscator/lexer"
+	"github.com/devOpifex/obfuscator/obfuscator"
+	"github.com/devOpifex/obfuscator/parser"
+	"github.com/devOpifex/obfuscator/transpiler"
 )
 
 func main() {

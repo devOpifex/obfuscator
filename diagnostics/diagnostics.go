@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/sparkle-tech/obfuscator/token"
+	"github.com/devOpifex/obfuscator/token"
 )
 
 // To match LSP specs

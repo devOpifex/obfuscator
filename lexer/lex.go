@@ -6,9 +6,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/sparkle-tech/obfuscator/ast"
-	"github.com/sparkle-tech/obfuscator/diagnostics"
-	"github.com/sparkle-tech/obfuscator/token"
+	"github.com/devOpifex/obfuscator/ast"
+	"github.com/devOpifex/obfuscator/diagnostics"
+	"github.com/devOpifex/obfuscator/token"
 )
 
 type File struct {

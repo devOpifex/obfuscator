@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/sparkle-tech/obfuscator/environment"
+	"github.com/devOpifex/obfuscator/environment"
 )
 
 // Configuration for the R code generation

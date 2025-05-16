@@ -3,9 +3,9 @@ package obfuscator
 import (
 	"testing"
 
-	"github.com/sparkle-tech/obfuscator/environment"
-	"github.com/sparkle-tech/obfuscator/lexer"
-	"github.com/sparkle-tech/obfuscator/parser"
+	"github.com/devOpifex/obfuscator/environment"
+	"github.com/devOpifex/obfuscator/lexer"
+	"github.com/devOpifex/obfuscator/parser"
 )
 
 func TestBasic(t *testing.T) {

@@ -1,3 +1,3 @@
-module github.com/sparkle-tech/obfuscator
+module github.com/devOpifex/obfuscator
 
 go 1.22.0

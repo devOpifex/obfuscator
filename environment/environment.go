@@ -3,7 +3,7 @@ package environment
 import (
 	"strings"
 
-	"github.com/sparkle-tech/obfuscator/lexer"
+	"github.com/devOpifex/obfuscator/lexer"
 )
 
 var KEY string = "DEFAULT"

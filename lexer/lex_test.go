@@ -3,7 +3,7 @@ package lexer
 import (
 	"testing"
 
-	"github.com/sparkle-tech/obfuscator/token"
+	"github.com/devOpifex/obfuscator/token"
 )
 
 func TestDeclare(t *testing.T) {

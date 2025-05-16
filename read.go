@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sparkle-tech/obfuscator/ast"
-	"github.com/sparkle-tech/obfuscator/environment"
-	"github.com/sparkle-tech/obfuscator/lexer"
+	"github.com/devOpifex/obfuscator/ast"
+	"github.com/devOpifex/obfuscator/environment"
+	"github.com/devOpifex/obfuscator/lexer"
 )
 
 type obfs struct {

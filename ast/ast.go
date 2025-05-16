@@ -3,7 +3,7 @@ package ast
 import (
 	"bytes"
 
-	"github.com/sparkle-tech/obfuscator/token"
+	"github.com/devOpifex/obfuscator/token"
 )
 
 type Node interface {

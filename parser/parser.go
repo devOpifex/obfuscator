@@ -3,10 +3,10 @@ package parser
 import (
 	"fmt"
 
-	"github.com/sparkle-tech/obfuscator/ast"
-	"github.com/sparkle-tech/obfuscator/diagnostics"
-	"github.com/sparkle-tech/obfuscator/lexer"
-	"github.com/sparkle-tech/obfuscator/token"
+	"github.com/devOpifex/obfuscator/ast"
+	"github.com/devOpifex/obfuscator/diagnostics"
+	"github.com/devOpifex/obfuscator/lexer"
+	"github.com/devOpifex/obfuscator/token"
 )
 
 const (
