@@ -111,4 +111,4 @@ The obfuscator works by:
 3. Consistently replacing identifiers throughout the codebase
 4. Preserving the functionality while making the code harder to read
 
-_You may want to use the Go modules to lex, and parse R code too._
+_You may want to use the Go modules to lex, or parse R code too._
